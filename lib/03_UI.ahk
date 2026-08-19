@@ -13,6 +13,14 @@
 ; ═══════════════════════════════════════════════════════════════════════
 global GdipToken := 0
 
+; Масштаб DPI окна (1.0 = 96dpi, 1.25 = 125% и т.д.).
+; Битмапы кнопок рисуются в ФИЗИЧЕСКИХ пикселях — иначе Windows растягивает
+; картинку под размер контрола и контуры/обводки «плывут» (размытые, рваные).
+GetScale(hwnd) {
+    try return DllCall("GetDpiForWindow", "Ptr", hwnd, "UInt") / 96.0
+    return 1.0
+}
+
 GdipStartup() {
     global GdipToken
     if GdipToken
@@ -173,6 +181,7 @@ class ModernButton {
         this._radius := (style = "close" || style = "clear" || style = "nav") ? h // 2 : Min(Round(h * 0.34), 14)
         ; Фон (скруглённый, с альфой) + текстовая подпись поверх
         this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
+        this._scale := GetScale(this._bg.Hwnd)
         this._bgCtrl := this._bg
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
@@ -206,7 +215,7 @@ class ModernButton {
             case "segmented":
                 return {bg: "36385a", hover: "4a4e78", text: "c8cde8", textHover: "f0f2ff", border: "565a88", activeBg: "89b4fa", activeText: "181825"}
             case "nav":
-                return {bg: "000000", hover: "454a74", text: "c6cbe4", textHover: "ffffff", border: "000000", alpha: 0, hoverAlpha: 110, activeBg: "89b4fa", activeText: "181825"}
+                return {bg: "2e3050", hover: "41456e", text: "d6dbf2", textHover: "ffffff", border: "54598c", activeBg: "89b4fa", activeText: "181825"}
             default:
                 return {bg: "34364e", hover: "4a4e70", text: "e6e9f7", textHover: "ffffff", border: "63678f"}
         }
@@ -214,9 +223,10 @@ class ModernButton {
 
     ; ---- Отрисовка одного кадра (только при создании/смене схемы) ----
     _MakeBitmap(bgHex, alpha := 255) {
-        w := this.w
-        h := this.h
-        r := this._radius
+        s := this._scale
+        w := Round(this.w * s)
+        h := Round(this.h * s)
+        r := Round(this._radius * s)
         pBitmap := GdipCreateBitmap(w, h)
         if !pBitmap
             return 0
@@ -233,12 +243,13 @@ class ModernButton {
             DllCall("gdiplus\GdipDeletePath", "Ptr", path)
             GdipDeleteBrush(brush)
         }
-        ; Тонкая обводка
+        ; Тонкая обводка (толщина = масштаб DPI, чтобы была ровной)
         borderHex := this.colors.HasOwnProp("border") ? this.colors.border : "45475a"
         if alpha > 30 && borderHex != "" && borderHex != "000000" {
-            pen := GdipPen(ARGB(alpha, HexToRGB(borderHex)), 1)
+            pen := GdipPen(ARGB(alpha, HexToRGB(borderHex)), Max(1, Round(s)))
             if pen {
-                path := GdipRoundedPath(0.5, 0.5, w - 1, h - 1, Max(1, r - 1))
+                inset := s / 2
+                path := GdipRoundedPath(inset, inset, w - s, h - s, Max(1, r - Round(s)))
                 DllCall("gdiplus\GdipDrawPath", "Ptr", g, "Ptr", pen, "Ptr", path)
                 DllCall("gdiplus\GdipDeletePath", "Ptr", path)
                 GdipDeletePen(pen)
@@ -448,26 +459,30 @@ CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip :
 ModernPanel(parent, x, y, w, h, fill := "", accent := "", radius := 14, border := "") {
     global THEME
     GdipStartup()
+    s := GetScale(parent.Hwnd)
     fill := fill = "" ? THEME["bgLight"] : fill
-    pBitmap := GdipCreateBitmap(w, h)
+    pw := Round(w * s)
+    ph := Round(h * s)
+    pBitmap := GdipCreateBitmap(pw, ph)
     if !pBitmap
         return ""
     g := GdipGetGraphics(pBitmap)
     DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
     ; Фон карточки
-    path := GdipRoundedPath(0, 0, w, h, radius)
+    path := GdipRoundedPath(0, 0, pw, ph, Round(radius * s))
     brush := GdipBrush(ARGB(255, HexToRGB(fill)))
     DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
     GdipDeleteBrush(brush)
     DllCall("gdiplus\GdipDeletePath", "Ptr", path)
     ; Обводка
     if border != "" {
-        GdipDrawRounded(g, 0.5, 0.5, w - 1, h - 1, Max(1, radius - 1), ARGB(255, HexToRGB(border)), 1)
+        inset := s / 2
+        GdipDrawRounded(g, inset, inset, pw - s, ph - s, Max(1, Round(radius * s) - Round(s)), ARGB(255, HexToRGB(border)), Max(1, Round(s)))
     }
     ; Акцентная полоска слева (скруглённая, с отступами)
     if accent != "" {
-        aw := 4
-        path := GdipRoundedPath(0, 10, aw, h - 20, 2)
+        aw := Round(4 * s)
+        path := GdipRoundedPath(0, Round(10 * s), aw, ph - Round(20 * s), Round(2 * s))
         brush := GdipBrush(ARGB(255, HexToRGB(accent)))
         DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
         GdipDeleteBrush(brush)
@@ -496,11 +511,11 @@ ModernPanel(parent, x, y, w, h, fill := "", accent := "", radius := 14, border :
 ; Никаких анимированных индикаторов и таймеров — переключение мгновенное.
 ; ═══════════════════════════════════════════════════════════════════════
 class ModernNavBar {
-    __New(gui, tabs, labels, x, y, w, h) {
+    __New(gui, switchFn, labels, x, y, w, h) {
         global THEME, HoverButtons
         GdipStartup()
         this.gui := gui
-        this.tabs := tabs
+        this.switchFn := switchFn
         this.items := []
         this.active := 0
         itemW := Round(w / labels.Length)
@@ -520,20 +535,24 @@ class ModernNavBar {
         if !force && this.active = idx
             return
         ; Батчим перерисовку: переключение вкладки и подсветка пилюль
-        ; происходят в одном кадре — без мерцания и «скачков»
+        ; происходят в одном кадре — без мерцания и «скачков».
+        ; try/finally гарантирует, что перерисовка ВСЕГДА включится обратно
         try this.gui.Opt("-Redraw")
-        try this.tabs.Choose(idx)
-        for item in this.items {
-            act := (item.id = idx)
-            item.btn.SetActive(act)
+        try {
+            this.switchFn.Call(idx)
+            for item in this.items {
+                act := (item.id = idx)
+                item.btn.SetActive(act)
+            }
+        } finally {
+            try this.gui.Opt("+Redraw")
         }
-        try this.gui.Opt("+Redraw")
         this.active := idx
     }
 }
 
-CreateModernNavBar(gui, tabs, labels, x, y, w, h) {
-    return ModernNavBar(gui, tabs, labels, x, y, w, h)
+CreateModernNavBar(gui, switchFn, labels, x, y, w, h) {
+    return ModernNavBar(gui, switchFn, labels, x, y, w, h)
 }
 
 ; ═══════════════════════════════════════════════════════════════════════

@@ -54,28 +54,15 @@ BuildMainGui() {
     TitleBar.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, MainGui.Hwnd))
     
     ; === 3. ВКЛАДКИ ===
-    ; Нативный Tab3 используется только для группировки/скрытия контента,
-    ; его собственные заголовки мы прячем и рисуем современную панель навигации.
-    ; WS_CLIPSIBLINGS (0x04000000): нативный Tab3 не должен закрашивать
-    ; нашу панель навигации (она лежит поверх него в Z-порядке)
-    tabs := MainGui.AddTab3("x10 y50 w940 h700 Background" THEME["bgLight"] " c" THEME["text"],
-        ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
-    ; WS_CLIPSIBLINGS (0x04000000) ТОЛЬКО на Tab3: при перерисовке вкладка
-    ; не будет закрашивать наши контролы поверх неё (полосу и кнопки).
-    ; ВАЖНО: НЕ вешать этот стиль на наши контролы — он вырезает их самих.
-    try tabs.Opt("+0x04000000")
-    try {
-        style := DllCall("GetWindowLong", "Ptr", tabs.Hwnd, "Int", -16, "Int")
-        DllCall("SetWindowLong", "Ptr", tabs.Hwnd, "Int", -16, "Int", style | 0x04000000)
-    }
-    ; TCM_SETITEMSIZE (0x1329): высота нативных заголовков = 1px (скрыты).
-    ; lParam = MAKELPARAM(ширина, высота) = 0x00010001 (1 и 1)
-    try SendMessage(0x1329, 0, 0x00010001, tabs.Hwnd)
+    ; ВАЖНО: нативного Tab3 НЕТ. Вкладки переключаются вручную (SwitchTab):
+    ; показ/скрытие контролов страницы. Это полностью убирает мерцание,
+    ; прыжки и «старые заголовки» — не с чем воевать.
+    ; Границы страниц помечаются маркерами TabMark(n).
 
     ; ==============================================================================
     ; 1. ГЛАВНАЯ (PERFECT GRID ALIGNMENT)
     ; ==============================================================================
-    tabs.UseTab(1)
+    TabMark(1)
     
     yHead := 90 
     
@@ -220,7 +207,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 2. БИНДЫ (MODERN MANAGER LAYOUT)
     ; ==============================================================================
-    tabs.UseTab(2)
+    TabMark(2)
     
     yHead := 90 
     
@@ -381,7 +368,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 3. НАСТРОЙКИ (FINAL POLISHED LAYOUT)
     ; ==============================================================================
-    tabs.UseTab(3)
+    TabMark(3)
     
     yHead := 90
     
@@ -431,6 +418,7 @@ BuildMainGui() {
     global CurrentSettingTab := "General"
 
     SwitchSettingTab(tabName) {
+        global CurrentSettingTab
         CurrentSettingTab := tabName
         
         for btn in MenuBtns {
@@ -760,7 +748,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 4. СТАТИСТИКА (SIDEBAR STYLE)
     ; ==============================================================================
-    tabs.UseTab(4)
+    TabMark(4)
     
     yHead := 90
     
@@ -800,6 +788,7 @@ BuildMainGui() {
     global CurrentStatTab := "Dashboard"
     
     SwitchStatTab(tabName) {
+        global CurrentStatTab
         CurrentStatTab := tabName
         for btn in StatBtns {
             isActive := (btn.id = tabName)
@@ -908,7 +897,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 5. СПРАВКА (FINAL LAYOUT WITH STATIC SIDEBAR)
     ; ==============================================================================
-    tabs.UseTab(5)
+    TabMark(5)
     
     yHead := 90
     
@@ -950,6 +939,7 @@ BuildMainGui() {
     global CurrentHelpTab := "Overlay"
     
     SwitchHelpTab(tabName) {
+        global CurrentHelpTab
         CurrentHelpTab := tabName
         for btn in HelpBtns {
             isActive := (btn.id = tabName)
@@ -1091,7 +1081,7 @@ BuildMainGui() {
     ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ
     ; (анимированный индикатор-пилюля, hover-эффекты, fade-переход содержимого)
     ; ==============================================================================
-    tabs.UseTab(0)   ; навигация не привязана ни к одной вкладке — видна всегда
+    TabMark(0)   ; навигация не привязана ни к одной вкладке — видна всегда
     navStrip := MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
     navSep := MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
     ; Поднимаем полосу над Tab3: нативные заголовки физически не смогут
@@ -1101,9 +1091,70 @@ BuildMainGui() {
     try DllCall("user32\SetWindowPos", "Ptr", navStrip.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
     try DllCall("user32\SetWindowPos", "Ptr", navSep.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
 
-    global NavBar := CreateModernNavBar(MainGui, tabs,
+    ; Показывает страницу n, скрывает остальные. Для вкладок с боковым меню
+    ; (Настройки/Статистика/Справка) дополнительно восстанавливает выбранный
+    ; раздел — ровно как это делал нативный Tab3.
+    SwitchTab(n) {
+        global TabPages, CurrentSettingTab, CurrentStatTab, CurrentHelpTab
+        if !IsObject(TabPages) || !TabPages.Has(n)
+            return
+        for i, ctrls in TabPages {
+            vis := (i = n)
+            for c in ctrls {
+                try c.Visible := vis
+            }
+        }
+        if n = 3
+            SwitchSettingTab(CurrentSettingTab)
+        else if n = 4
+            SwitchStatTab(CurrentStatTab)
+        else if n = 5
+            SwitchHelpTab(CurrentHelpTab)
+    }
+
+    global NavBar := CreateModernNavBar(MainGui, SwitchTab,
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"],
         20, 55, 920, 28)
+
+    ; Собираем страницы и показываем первую
+    BuildTabPages()
+    SwitchTab(1)
+}
+
+; ══════════════════════════════════════════════════════════════════════════
+; РУЧНОЕ ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК (вместо нативного Tab3)
+; ══════════════════════════════════════════════════════════════════════════
+; Маркер границы страницы: невидимый контрол, по которому BuildTabPages
+; определяет, к какой вкладке относятся следующие контролы.
+TabMark(n) {
+    global MainGui
+    MainGui.AddText("x0 y0 w1 h1 Hidden vTabMarker" n, "")
+}
+
+; Разносит все контролы окна по страницам 1..5 (по маркерам).
+; Контролы до TabMark(1) и после TabMark(0) — постоянные (шапка, навигация).
+BuildTabPages() {
+    global MainGui, TabPages
+    TabPages := Map()
+    for i in [1, 2, 3, 4, 5]
+        TabPages[i] := []
+    cur := 0
+    for ctrl in MainGui {
+        matched := false
+        for i in [0, 1, 2, 3, 4, 5] {
+            try {
+                if MainGui["TabMarker" i].Hwnd = ctrl.Hwnd {
+                    cur := i
+                    matched := true
+                    break
+                }
+            }
+        }
+        if matched
+            continue
+        if cur > 0
+            TabPages[cur].Push(ctrl)
+    }
 }
 
 ; Закрытие главного окна (мгновенно — никаких анимаций прозрачности,
