@@ -7,7 +7,8 @@
 ;
 BuildMainGui() {
     global MainGui, HoverButtons, THEME, STATE, CFG, STATS, APP_NAME, VERSION, AUTHOR
-    global g_BtnSaveProfile, g_BtnSaveSettings, g_BtnGlobalSave 
+    global g_BtnSaveProfile, g_BtnSaveSettings, g_BtnGlobalSave
+    global g_BtnFmtAt, g_BtnFmtQuote, g_BtnFmtPlain
     global SettingGroups := Map()
 
     try {
