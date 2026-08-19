@@ -537,7 +537,7 @@ SafeCloseEditor() {
     
     if !EditorHasChanges {
         CleanupHoverButtons(EditorGui)
-        FadeOutGui(EditorGui, "destroy")
+        EditorGui.Destroy()
         EditorGui := ""
         return
     }
@@ -549,7 +549,7 @@ SafeCloseEditor() {
     }
     else if result = "No" {
         CleanupHoverButtons(EditorGui)
-        FadeOutGui(EditorGui, "destroy")
+        EditorGui.Destroy()
         EditorGui := ""
         
         Undo() ; Откатываем изменения в массиве

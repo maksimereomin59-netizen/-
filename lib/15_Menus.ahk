@@ -256,7 +256,7 @@ ShowBindSelector(cfgKey, btnName) {
     CreateStyledButton(BindSelectorGui, 5, 280, 240, 30, "Отмена", (*) => BindSelectorGui.Destroy(), "danger")
     
     BindSelectorGui.Show("x" mx " y" my " w250 h315 NA")
-    MakeWindowRounded(BindSelectorGui, 12)
+    
     
     ; Убираем гориз. скролл
     try DllCall("ShowScrollBar", "Ptr", lvSel.Hwnd, "Int", 0, "Int", 0)

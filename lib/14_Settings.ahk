@@ -758,7 +758,7 @@ ShowRuleEditor(editIndex := 0) {
     
     ; Кнопка закрытия (современная, с ховером и fade-закрытием)
     CloseBtn := CreateStyledButton(RuleEditorGui, w-40, 0, 40, 40, "✕",
-        (*) => (FadeOutGui(RuleEditorGui, "destroy")), "close")
+        (*) => RuleEditorGui.Destroy(), "close")
     
     y := 60
     x := 25
@@ -798,7 +798,7 @@ ShowRuleEditor(editIndex := 0) {
     RuleEditorGui.Show("w" w " h" h)
     WinGetPos(,, &ww, &wh, RuleEditorGui.Hwnd)
     RuleEditorGui.Move((A_ScreenWidth - ww) // 2, (A_ScreenHeight - wh) // 2)
-    MakeWindowRounded(RuleEditorGui, 12)
+    
 }
 
 ; === ИСПРАВЛЕННАЯ ФУНКЦИЯ ВЫБОРА ПАПКИ ===

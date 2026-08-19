@@ -56,9 +56,11 @@ BuildMainGui() {
     ; === 3. ВКЛАДКИ ===
     ; Нативный Tab3 используется только для группировки/скрытия контента,
     ; его собственные заголовки мы прячем и рисуем современную панель навигации.
-    tabs := MainGui.AddTab3("x10 y50 w940 h700 Background" THEME["bgLight"] " c" THEME["text"],
+    ; WS_CLIPSIBLINGS (0x04000000): нативный Tab3 при перерисовке не будет
+    ; закрашивать нашу панель навигации — убирает «старые вкладки» и мерцание
+    tabs := MainGui.AddTab3("x10 y50 w940 h700 0x04000000 Background" THEME["bgLight"] " c" THEME["text"],
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
-    try SendMessage(0x1329, 0, 0, tabs.Hwnd)   ; TCM_SETITEMSIZE: высота заголовков = 0
+    try SendMessage(0x1329, 0, 1, tabs.Hwnd)   ; TCM_SETITEMSIZE: заголовки = 1px (скрыты)
 
     ; ==============================================================================
     ; 1. ГЛАВНАЯ (PERFECT GRID ALIGNMENT)
@@ -1088,11 +1090,12 @@ BuildMainGui() {
         20, 55, 920, 28)
 }
 
-; Плавное закрытие главного окна
+; Закрытие главного окна (мгновенно — никаких анимаций прозрачности,
+; из-за которых окно могло оставаться «тусклым» или прыгать)
 CloseMainGui() {
     global MainGui
     if MainGui
-        FadeOutGui(MainGui, "hide")
+        MainGui.Hide()
 }
 
 ClearSearch(*) {
@@ -1392,6 +1395,7 @@ ShowMainGui() {
     RefreshBindList()
 
     MainGui.Show("w960 h760")
+    try WinSetTransparent("Off", MainGui)   ; страховка от «застрявшей» прозрачности
     FadeInGui(MainGui)   ; плавное появление окна
     
     try {

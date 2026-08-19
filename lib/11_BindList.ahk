@@ -289,7 +289,7 @@ CaptureHotkeyVisual(slotIdx) {
     CreateStyledButton(captureGui, 330, 180, 140, 40, "✅ OK", (*) => (ih.Stop(), ApplyCapturedKeyToSlot(CapturedEditorKey, slotIdx, captureGui)), "success")
     captureGui.OnEvent("Close", (*) => (ih.Stop(), captureGui.Destroy()))
     captureGui.Show("w500 h240")
-    MakeWindowRounded(captureGui, 12)
+    
     ih.Start()
 }
 
@@ -547,7 +547,7 @@ ShowConflictDialog(key, conflictName, slotIdx, parentGui) {
     conflictGui.Show("w500 h335")
     conflictGui.GetPos(&gx, &gy, &gw, &gh)
     conflictGui.Move((A_ScreenWidth - gw) / 2, (A_ScreenHeight - gh) / 2)
-    MakeWindowRounded(conflictGui, 12)
+    
 }
 
 ConfirmReplace(key, slotIdx, parentGui, conflictGui) {
@@ -600,7 +600,7 @@ ShowEditorConflictDialog(key, conflictName) {
     conflictGui.Show("w500 h330")
     conflictGui.GetPos(&gx, &gy, &gw, &gh)
     conflictGui.Move((A_ScreenWidth - gw) / 2, (A_ScreenHeight - gh) / 2)
-    MakeWindowRounded(conflictGui, 12)
+    
 }
 
 ConfirmEditorReplace(key, conflictGui) {

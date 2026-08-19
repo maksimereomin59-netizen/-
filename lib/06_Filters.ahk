@@ -177,7 +177,7 @@ ShowFilterMenu(*) {
     } catch {
         FilterMenuGui.Show("w" w " h" y)
     }
-    MakeWindowRounded(FilterMenuGui, 10)
+    
 }
 
 ApplyFilterFromMenu(filterName) {
@@ -211,7 +211,7 @@ CreateNewFilter() {
     CreateStyledButton(filterGui, 140, 130, 110, 36, "Отмена", (*) => filterGui.Destroy(), "default")
     
     filterGui.Show("w360 h185")
-    MakeWindowRounded(filterGui, 12)
+    
 }
 
 SaveNewFilter(gui) {
@@ -258,7 +258,7 @@ EditFilters() {
     CreateStyledButton(FilterEditorGui, 260, 370, 110, 36, "Закрыть", (*) => FilterEditorGui.Destroy(), "default")
     
     FilterEditorGui.Show("w500 h425")
-    MakeWindowRounded(FilterEditorGui, 12)
+    
 }
 
 DeleteSelectedFilter() {
@@ -339,7 +339,7 @@ ShowModernFilterMenu(*) {
     }
     
     FilterPopupGui.Show("x" menuX " y" menuY " w" w " h" (y+2) " NA")
-    MakeWindowRounded(FilterPopupGui, 10)
+    
 }
 
 ApplyModernFilter(name) {

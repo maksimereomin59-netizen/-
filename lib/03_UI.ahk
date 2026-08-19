@@ -190,25 +190,25 @@ class ModernButton {
         style := StrLower(style)
         switch style {
             case "success", "green", "ok", "save":
-                return {bg: "2f5238", hover: "3d6b47", text: "ffffff", textHover: "ffffff", border: "4a7a56"}
+                return {bg: "2e5c3a", hover: "3f7a50", text: "ffffff", textHover: "ffffff", border: "5a9a70"}
             case "danger", "red", "delete", "error":
-                return {bg: "6e2e36", hover: "8a3b45", text: "ffffff", textHover: "ffffff", border: "9c4a55"}
+                return {bg: "7a3040", hover: "98425a", text: "ffffff", textHover: "ffffff", border: "b8576e"}
             case "info", "blue", "primary":
-                return {bg: "2e3b6e", hover: "3b4d8f", text: "ffffff", textHover: "ffffff", border: "4a5fb0"}
+                return {bg: "33448c", hover: "4357b8", text: "ffffff", textHover: "ffffff", border: "6478d8"}
             case "warning", "yellow":
-                return {bg: "6e5b2e", hover: "8a7338", text: "ffffff", textHover: "ffffff", border: "9a844e"}
+                return {bg: "7a6433", hover: "987f45", text: "ffffff", textHover: "ffffff", border: "b89a60"}
             case "accent":
                 return {bg: "89b4fa", hover: "a9c7fd", text: "181825", textHover: "181825", border: "b4befe"}
             case "close":
                 return {bg: "000000", hover: "e64553", text: "a6adc8", textHover: "ffffff", border: "000000", alpha: 0}
             case "clear":
-                return {bg: "000000", hover: "f38ba8", text: "6c7086", textHover: "f38ba8", border: "000000", alpha: 0, hoverAlpha: 80}
+                return {bg: "000000", hover: "f38ba8", text: "6c7086", textHover: "f38ba8", border: "000000", alpha: 0, hoverAlpha: 90}
             case "segmented":
-                return {bg: "313244", hover: "45475a", text: "a6adc8", textHover: "cdd6f4", border: "45475a", activeBg: "89b4fa", activeText: "181825"}
+                return {bg: "36385a", hover: "4a4e78", text: "c8cde8", textHover: "f0f2ff", border: "565a88", activeBg: "89b4fa", activeText: "181825"}
             case "nav":
-                return {bg: "000000", hover: "3b3d4f", text: "a6adc8", textHover: "cdd6f4", border: "000000", alpha: 0, activeBg: "89b4fa", activeText: "181825"}
+                return {bg: "000000", hover: "40446a", text: "b4bcd8", textHover: "ffffff", border: "4a4e78", alpha: 0, activeBg: "89b4fa", activeText: "181825"}
             default:
-                return {bg: "2b2b3b", hover: "3a3a4f", text: "cdd6f4", textHover: "ffffff", border: "45475a"}
+                return {bg: "34364e", hover: "4a4e70", text: "e6e9f7", textHover: "ffffff", border: "63678f"}
         }
     }
 
@@ -417,10 +417,10 @@ class ModernButton {
         ; Эффект нажатия: лёгкое вдавливание
         try this._bg.Move(this.x + 1, this.y + 1)
         try this.ctrl.Move(this.x + 1, this.y + 1)
-        Sleep(55)
+        Sleep(40)
         try this._bg.Move(this.x, this.y)
         try this.ctrl.Move(this.x, this.y)
-        Sleep(15)
+        Sleep(10)
         this.callback.Call()
     }
 }
@@ -507,7 +507,7 @@ class ModernNavBar {
         this.items := []
         this.active := 1
         this._step := 0
-        this._steps := 12
+        this._steps := 8
         this._fromX := 0
         this._toX := 0
         this._anim := ObjBindMethod(this, "Tick")
@@ -519,7 +519,7 @@ class ModernNavBar {
         this.indY := y + h + 1
         for i, label in labels {
             ix := x + (i - 1) * itemW
-            t := gui.AddText("x" ix " y" y " w" itemW " h" h " Center 0x200 BackgroundTrans c" (i = 1 ? THEME["accent"] : THEME["textDim"]), label)
+            t := gui.AddText("x" ix " y" y " w" itemW " h" h " Center 0x200 Background" THEME["bgLight"] " c" (i = 1 ? THEME["accent"] : THEME["textDim"]), label)
             t.SetFont("s10 bold", "Segoe UI")
             t.OnEvent("Click", ((idx) => (*) => this.Select(idx))(i))
             item := NavItem(this, i, t, gui)
@@ -553,10 +553,17 @@ class ModernNavBar {
 
     Select(idx) {
         global THEME
-        if this.active = idx {
-            ; клик по активной вкладке — просто мягкий «пульс»
+        ; Батчим перерисовку окна: переключение вкладки происходит
+        ; одним махом, без мерцания и «прыжков» нативного Tab3.
+        ; ВНИМАНИЕ: в AHK v2 "-Redraw" ОТКЛЮЧАЕТ перерисовку, "+Redraw" включает.
+        try this.gui.Opt("-Redraw")
+        ok := true
+        try this.tabs.Choose(idx)
+        catch
+            ok := false
+        try this.gui.Opt("+Redraw")
+        if !ok
             return
-        }
         oldIdx := this.active
         this.active := idx
         ; Смена цвета пунктов
@@ -565,14 +572,15 @@ class ModernNavBar {
             try item.ctrl.Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
             try item.ctrl.Redraw()
         }
-        ; Переключаем вкладку
-        try this.tabs.Choose(idx)
+        ; Повторный клик по уже активной вкладке — просто переключили, без анимации
+        if oldIdx = idx
+            return
         ; Анимация индикатора от старой позиции к новой
         this._fromX := this.indX
         this._toX := this.indX + (idx - oldIdx) * this.itemW
         this._step := 0
         SetTimer(this._anim, 0)
-        SetTimer(this._anim, 12)
+        SetTimer(this._anim, 16)
     }
 
     Tick() {
@@ -596,7 +604,7 @@ CreateModernNavBar(gui, tabs, labels, x, y, w, h) {
 ; ═══════════════════════════════════════════════════════════════════════
 ; FADE ОКОН
 ; ═══════════════════════════════════════════════════════════════════════
-FadeInGui(gui, steps := 12, interval := 12) {
+FadeInGui(gui, steps := 10, interval := 10) {
     try {
         WinSetTransparent(0, gui)
         step := 255 // steps
@@ -604,10 +612,11 @@ FadeInGui(gui, steps := 12, interval := 12) {
             try WinSetTransparent(A_Index * step, gui)
             Sleep interval
         }
-        WinSetTransparent("Off", gui)
     } catch {
-        try WinSetTransparent("Off", gui)
+        ; игнорируем — окно всё равно покажем
     }
+    ; ВАЖНО: всегда снимаем прозрачность, иначе окно останется «тусклым»
+    try WinSetTransparent("Off", gui)
 }
 
 FadeOutGui(gui, action := "hide", steps := 10, interval := 12) {
