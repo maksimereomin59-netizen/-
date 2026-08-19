@@ -1292,7 +1292,7 @@ BuildMainGui() {
                 hb.active := (hb.id = idx)
         }
         SendMessage(0x000B, 1, 0, MainGui.Hwnd)
-        MainGui.Redraw()
+        WinRedraw("ahk_id " MainGui.Hwnd)   ; у Gui нет метода Redraw — перерисовываем окно через WinRedraw
     }
 }
 
