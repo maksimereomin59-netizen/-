@@ -132,7 +132,10 @@ HexToRGB(c) {
     return [Integer("0x" SubStr(c, 1, 2)), Integer("0x" SubStr(c, 3, 2)), Integer("0x" SubStr(c, 5, 2))]
 }
 
-RGBToHex(r, g, b) {
+RGBToHex(r, g := "", b := "") {
+    ; Универсальная: RGBToHex(r,g,b) или RGBToHex([r,g,b])
+    if IsObject(r)
+        return Format("{:02X}{:02X}{:02X}", Round(r[1]), Round(r[2]), Round(r[3]))
     return Format("{:02X}{:02X}{:02X}", Round(r), Round(g), Round(b))
 }
 
