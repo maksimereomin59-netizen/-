@@ -1112,13 +1112,15 @@ BuildMainGui() {
             SwitchHelpTab(CurrentHelpTab)
     }
 
+    ; Собираем страницы ПЕРЕД созданием навигации: конструктор NavBar
+    ; сразу вызывает Select(1) -> SwitchTab(1), а TabPages к этому моменту
+    ; уже должен существовать (иначе 'This global variable has not been
+    ; assigned a value' / 'Value not enumerable')
+    BuildTabPages()
+
     global NavBar := CreateModernNavBar(MainGui, SwitchTab,
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"],
         20, 55, 920, 28)
-
-    ; Собираем страницы и показываем первую
-    BuildTabPages()
-    SwitchTab(1)
 }
 
 ; ══════════════════════════════════════════════════════════════════════════

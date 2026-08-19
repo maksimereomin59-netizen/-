@@ -539,7 +539,10 @@ class ModernNavBar {
         ; try/finally гарантирует, что перерисовка ВСЕГДА включится обратно
         try this.gui.Opt("-Redraw")
         try {
-            this.switchFn.Call(idx)
+            ; switchFn не должен ронять поток при ошибке
+            try this.switchFn.Call(idx)
+            catch
+                ; игнорируем — переключение вкладки не критично
             for item in this.items {
                 act := (item.id = idx)
                 item.btn.SetActive(act)
