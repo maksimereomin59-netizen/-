@@ -213,7 +213,6 @@ OpenBindEditor(slotNum) {
     xPos := (A_ScreenWidth - totalW) // 2
     yPos := (A_ScreenHeight - totalH) // 2
     EditorGui.Show("x" xPos " y" yPos " w" totalW " h" totalH)
-    MakeWindowRounded(EditorGui, 12)
 }
 
 ; ══════════════════════════════════════════════════════════════════════════

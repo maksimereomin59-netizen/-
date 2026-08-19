@@ -436,9 +436,6 @@ BuildMainGui() {
         for ctrl in SettingGroups[tabName] {
             try ctrl.Visible := true
         }
-        
-        ; Плавный переход содержимого
-        try GuiContentFade(MainGui, xContent, yStart, wContent, hMenu, 80, 8, 12)
     }
     
     
@@ -805,9 +802,6 @@ BuildMainGui() {
         for ctrl in StatGroups[tabName] {
             try ctrl.Visible := true
         }
-        
-        ; Плавный переход содержимого
-        try GuiContentFade(MainGui, xContent, yStart, wContent, hMenu, 80, 8, 12)
     }
     
     ; --- ПРАВАЯ ОБЛАСТЬ ---
@@ -958,9 +952,6 @@ BuildMainGui() {
         for ctrl in HelpGroups[tabName] {
             try ctrl.Visible := true
         }
-        
-        ; Плавный переход содержимого
-        try GuiContentFade(MainGui, xCenter, yStart, wCenter, hMenu, 80, 8, 12)
     }
     
     ; --- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ (МЕНЯЮЩИЙСЯ КОНТЕНТ) ---
@@ -1093,7 +1084,7 @@ BuildMainGui() {
 
     global NavBar := CreateModernNavBar(MainGui, tabs,
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"],
-        20, 55, 920, 28, [0, 90, 960, 660])
+        20, 55, 920, 28)
 }
 
 ; Плавное закрытие главного окна
@@ -1400,7 +1391,6 @@ ShowMainGui() {
     RefreshBindList()
 
     MainGui.Show("w960 h760")
-    MakeWindowRounded(MainGui, 12)
     FadeInGui(MainGui)   ; плавное появление окна
     
     try {

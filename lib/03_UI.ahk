@@ -161,13 +161,15 @@ class ModernButton {
         this.style := style
         this.tip := tip
         this.colors := this.GetColors(style)
-        this.currentBg := this.colors.bg
-        this.currentAlpha := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
         this.isHovered := false
         this.isClickable := true
         this._isActive := false
-        this._hbm := 0
+        this._frames := []          ; кэш кадров: [1]=base [2]=mid [3]=hover (без GDI+ во время анимации)
+        this._disabledHbm := 0
+        this._activeHbm := 0
+        this._frameIdx := 1
         this._animTimer := ObjBindMethod(this, "AnimTick")
+        this._animDir := 0
         this._radius := (style = "close" || style = "clear") ? h // 2 : Min(Round(h * 0.34), 14)
         ; Фон (скруглённый, с альфой) + текстовая подпись поверх
         this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
@@ -180,7 +182,8 @@ class ModernButton {
         ; Клик по фону кнопки (не только по тексту) тоже срабатывает
         try this._bg.OnEvent("Click", (*) => this.OnClick())
         HoverButtons.Push(this)
-        this._RenderState(this.currentBg, this.colors.text, this.currentAlpha)
+        this._Precache()
+        this._ShowFrame(1, this.colors.text)
     }
 
     GetColors(style) {
@@ -209,7 +212,7 @@ class ModernButton {
         }
     }
 
-    ; ---- Отрисовка фона в один кадр ----
+    ; ---- Отрисовка одного кадра (только при создании/смене схемы) ----
     _MakeBitmap(bgHex, alpha := 255) {
         w := this.w
         h := this.h
@@ -247,59 +250,73 @@ class ModernButton {
         return hbm
     }
 
-    _RenderState(bg, textColor, alpha := 255) {
-        hbm := this._MakeBitmap(bg, alpha)
-        if hbm {
-            if this._hbm
-                DllCall("DeleteObject", "Ptr", this._hbm)
-            this._hbm := hbm
-            try this._bg.Value := "HBITMAP:*" hbm
+    ; ---- Предрасчёт кадров анимации (base -> mid -> hover) ----
+    _Precache() {
+        for hbm in this._frames {
+            if hbm
+                DllCall("DeleteObject", "Ptr", hbm)
         }
-        try this.ctrl.Opt("c" textColor)
-        try this.ctrl.Redraw()
-    }
-
-    ; ---- Плавная анимация смены цвета (ховер) ----
-    AnimateBg(target, targetAlpha := "") {
-        this._target := target
-        this._targetAlpha := targetAlpha = "" ? (this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255) : targetAlpha
-        this._from := HexToRGB(this.currentBg)
-        this._to := HexToRGB(target)
-        this._fromA := this.currentAlpha
-        this._toA := this._targetAlpha
-        this._step := 0
-        this._steps := 6
-        SetTimer(this._animTimer, 0)
-        SetTimer(this._animTimer, 15)
-    }
-
-    AnimTick() {
-        this._step++
-        t := Min(1, this._step / this._steps)
-        e := EaseOut(t)
-        r := this._from[1] + (this._to[1] - this._from[1]) * e
-        g := this._from[2] + (this._to[2] - this._from[2]) * e
-        b := this._from[3] + (this._to[3] - this._from[3]) * e
-        a := this._fromA + (this._toA - this._fromA) * e
-        this.currentBg := RGBToHex(r, g, b)
-        this.currentAlpha := Round(a)
-        textCol := this.colors.text
-        if this._isActive && this.colors.HasOwnProp("activeText")
-            textCol := this.colors.activeText
-        else if this.isHovered && this.colors.HasOwnProp("textHover")
-            textCol := this.colors.textHover
-        this._RenderState(this.currentBg, textCol, this.currentAlpha)
-        if this._step >= this._steps {
-            this.currentBg := this._target
-            this.currentAlpha := this._toA
-            SetTimer(this._animTimer, 0)
+        this._frames := []
+        if this._disabledHbm {
+            DllCall("DeleteObject", "Ptr", this._disabledHbm)
+            this._disabledHbm := 0
+        }
+        if this._activeHbm {
+            DllCall("DeleteObject", "Ptr", this._activeHbm)
+            this._activeHbm := 0
+        }
+        from := HexToRGB(this.colors.bg)
+        to := HexToRGB(this.colors.hover)
+        aBase := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
+        aHover := this.colors.HasOwnProp("hoverAlpha") ? this.colors.hoverAlpha : 255
+        for k in [0, 0.5, 1] {
+            r := Round(from[1] + (to[1] - from[1]) * k)
+            g := Round(from[2] + (to[2] - from[2]) * k)
+            b := Round(from[3] + (to[3] - from[3]) * k)
+            a := Round(aBase + (aHover - aBase) * k)
+            this._frames.Push(this._MakeBitmap(RGBToHex(r, g, b), a))
         }
     }
 
+    _GetDisabled() {
+        if !this._disabledHbm
+            this._disabledHbm := this._MakeBitmap("20202b", 255)
+        return this._disabledHbm
+    }
+
+    _GetActive() {
+        if !this._activeHbm && this.colors.HasOwnProp("activeBg")
+            this._activeHbm := this._MakeBitmap(this.colors.activeBg, 255)
+        return this._activeHbm
+    }
+
+    ; ---- Показ кадра из кэша (дешёвая операция) ----
+    _ShowFrame(idx, textCol := "") {
+        hbm := 0
+        if idx = "disabled"
+            hbm := this._GetDisabled()
+        else if idx = "active"
+            hbm := this._GetActive()
+        else {
+            if idx = this._frameIdx && textCol = ""
+                return
+            if idx < 1 || idx > this._frames.Length
+                return
+            hbm := this._frames[idx]
+            this._frameIdx := idx
+        }
+        if !hbm
+            return
+        try this._bg.Value := "HBITMAP:*" hbm
+        if textCol != ""
+            try this.ctrl.Opt("c" textCol)
+    }
+
+    ; ---- Плавный ховер через переключение кэшированных кадров ----
     SetHover(state) {
         if !this.isClickable {
             SetTimer(this._animTimer, 0)
-            this._RenderState("20202b", "454555", 255)
+            this._ShowFrame("disabled")
             return
         }
         if this.isHovered = state
@@ -313,10 +330,24 @@ class ModernButton {
         }
         if this._isActive && this.colors.HasOwnProp("activeBg")
             return
-        if state
-            this.AnimateBg(this.colors.hover, this.colors.HasOwnProp("hoverAlpha") ? this.colors.hoverAlpha : 255)
-        else
-            this.AnimateBg(this.colors.bg, this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255)
+        this._animDir := state ? 1 : -1
+        SetTimer(this._animTimer, 0)
+        SetTimer(this._animTimer, 12)
+    }
+
+    AnimTick() {
+        ni := this._frameIdx + this._animDir
+        if this._animDir > 0 && ni > this._frames.Length {
+            ni := this._frames.Length
+            SetTimer(this._animTimer, 0)
+        } else if this._animDir < 0 && ni < 1 {
+            ni := 1
+            SetTimer(this._animTimer, 0)
+        }
+        textCol := this.colors.text
+        if this._animDir > 0 && this.colors.HasOwnProp("textHover")
+            textCol := this.colors.textHover
+        this._ShowFrame(ni, textCol)
     }
 
     ; ---- Активное состояние (для сегментов и сайд-меню) ----
@@ -327,44 +358,57 @@ class ModernButton {
         SetTimer(this._animTimer, 0)
         if flag && this.colors.HasOwnProp("activeBg") {
             this.isHovered := false
-            this.currentBg := this.colors.activeBg
-            this.currentAlpha := 255
-            this._RenderState(this.colors.activeBg, this.colors.HasOwnProp("activeText") ? this.colors.activeText : this.colors.text, 255)
+            this._ShowFrame("active", this.colors.HasOwnProp("activeText") ? this.colors.activeText : this.colors.text)
         } else {
-            this.currentBg := this.colors.bg
-            this.currentAlpha := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
-            this._RenderState(this.currentBg, this.colors.text, this.currentAlpha)
+            this._frameIdx := 1
+            this._ShowFrame(1, this.colors.text)
         }
     }
 
     ; ---- Включено/выключено (серый) ----
     SetEnabledState(isActive, style := "success") {
+        SetTimer(this._animTimer, 0)
         if isActive {
             this.colors := this.GetColors(style)
             this.isClickable := true
             this.isHovered := false
-            SetTimer(this._animTimer, 0)
-            this.currentBg := this.colors.bg
-            this.currentAlpha := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
-            this._RenderState(this.currentBg, this.colors.text, this.currentAlpha)
+            this._Precache()
+            this._frameIdx := 1
+            this._ShowFrame(1, this.colors.text)
         } else {
             this.isClickable := false
-            SetTimer(this._animTimer, 0)
-            this._RenderState("20202b", "454555", 255)
+            this._ShowFrame("disabled")
         }
     }
 
     ; ---- Смена цветовой схемы на лету ----
     SetColorScheme(colors) {
         this.colors := colors
-        this.currentBg := colors.bg
-        this.currentAlpha := colors.HasOwnProp("alpha") ? colors.alpha : 255
-        this._RenderState(this.currentBg, colors.text, this.currentAlpha)
+        this._Precache()
+        this._frameIdx := 1
+        this._ShowFrame(1, colors.text)
     }
 
     SetVisible(v) {
         try this._bg.Visible := v
         try this.ctrl.Visible := v
+    }
+
+    ; ---- Освобождение битмапов (при уничтожении окна) ----
+    _FreeBitmaps() {
+        for hbm in this._frames {
+            if hbm
+                DllCall("DeleteObject", "Ptr", hbm)
+        }
+        this._frames := []
+        if this._disabledHbm {
+            DllCall("DeleteObject", "Ptr", this._disabledHbm)
+            this._disabledHbm := 0
+        }
+        if this._activeHbm {
+            DllCall("DeleteObject", "Ptr", this._activeHbm)
+            this._activeHbm := 0
+        }
     }
 
     OnClick() {
@@ -455,19 +499,19 @@ class NavItem {
 }
 
 class ModernNavBar {
-    __New(gui, tabs, labels, x, y, w, h, fadeRect := "") {
+    __New(gui, tabs, labels, x, y, w, h) {
         global THEME, HoverButtons
         GdipStartup()
         this.gui := gui
         this.tabs := tabs
         this.items := []
         this.active := 1
-        this.fadeRect := fadeRect
         this._step := 0
         this._steps := 12
         this._fromX := 0
         this._toX := 0
         this._anim := ObjBindMethod(this, "Tick")
+        this._indHbm := 0
         itemW := Round(w / labels.Length)
         this.itemW := itemW
         this.indW := Min(96, itemW - 24)
@@ -523,11 +567,6 @@ class ModernNavBar {
         }
         ; Переключаем вкладку
         try this.tabs.Choose(idx)
-        ; Fade содержимого
-        if this.fadeRect != "" {
-            fr := this.fadeRect
-            GuiContentFade(this.gui, fr[1], fr[2], fr[3], fr[4])
-        }
         ; Анимация индикатора от старой позиции к новой
         this._fromX := this.indX
         this._toX := this.indX + (idx - oldIdx) * this.itemW
@@ -550,32 +589,8 @@ class ModernNavBar {
     }
 }
 
-CreateModernNavBar(gui, tabs, labels, x, y, w, h, fadeRect := "") {
-    return ModernNavBar(gui, tabs, labels, x, y, w, h, fadeRect)
-}
-
-; ═══════════════════════════════════════════════════════════════════════
-; FADE-ПЕРЕХОД СОДЕРЖИМОГО (лёгкая «вуаль», плавно растворяется)
-; ═══════════════════════════════════════════════════════════════════════
-GuiContentFade(gui, x, y, w, h, maxAlpha := 150, steps := 10, interval := 14) {
-    global THEME
-    try {
-        if !WinExist("ahk_id " gui.Hwnd)
-            return
-        WinGetPos(&gx, &gy, , , "ahk_id " gui.Hwnd)
-        ov := Gui("+AlwaysOnTop -Caption +ToolWindow +Owner" gui.Hwnd)
-        ov.BackColor := THEME["bg"]
-        ov.MarginX := 0
-        ov.MarginY := 0
-        ov.Show("x" (gx + x) " y" (gy + y) " w" w " h" h " NA")
-        a := maxAlpha
-        Loop steps {
-            WinSetTransparent(a, ov)
-            a := maxAlpha - Round(maxAlpha * A_Index / steps)
-            Sleep interval
-        }
-        ov.Destroy()
-    }
+CreateModernNavBar(gui, tabs, labels, x, y, w, h) {
+    return ModernNavBar(gui, tabs, labels, x, y, w, h)
 }
 
 ; ═══════════════════════════════════════════════════════════════════════
@@ -702,10 +717,8 @@ CleanupHoverButtons(gui) {
             if !IsObject(btn) || !btn.HasOwnProp("parent") || !btn.HasOwnProp("ctrl")
                 continue
             if btn.parent = gui {
-                if btn.HasOwnProp("_hbm") && btn._hbm {
-                    DllCall("DeleteObject", "Ptr", btn._hbm)
-                    btn._hbm := 0
-                }
+                if btn.HasOwnProp("_FreeBitmaps")
+                    btn._FreeBitmaps()
                 continue
             }
             if !IsObject(btn.ctrl)
@@ -713,9 +726,8 @@ CleanupHoverButtons(gui) {
             try {
                 if btn.ctrl.Hwnd && WinExist("ahk_id " btn.ctrl.Hwnd) {
                     newButtons.Push(btn)
-                } else if btn.HasOwnProp("_hbm") && btn._hbm {
-                    DllCall("DeleteObject", "Ptr", btn._hbm)
-                    btn._hbm := 0
+                } else if btn.HasOwnProp("_FreeBitmaps") {
+                    btn._FreeBitmaps()
                 }
             }
         }
