@@ -1097,18 +1097,25 @@ BuildMainGui() {
         global TabPages
         if !IsObject(TabPages) || !TabPages.Has(n)
             return
-        ; Простое переключение видимости страниц. Батчинг перерисовки
-        ; делает вызывающий (ModernNavBar.Select через WM_SETREDRAW).
-        ; ВАЖНО: НЕ вызываем SwitchSettingTab/SwitchStatTab/SwitchHelpTab —
-        ; их состояние уже корректно (они вызываются при построении окна
-        ; и при кликах в боковом меню), повторный вызов заново скрывает/
-        ; показывает группы и даёт «прыжок текста» на долю секунды.
+        ; Показываем страницу, затем применяем состояние бокового меню.
+        ; ВАЖНО: ВСЁ это происходит ВНУТРИ батча WM_SETREDRAW (его делает
+        ; ModernNavBar.Select), поэтому окно рисуется один раз уже с
+        ; правильными группами — ни мигания, ни «прыжка текста».
         for i, ctrls in TabPages {
             vis := (i = n)
             for c in ctrls {
                 try c.Visible := vis
             }
         }
+        ; Боковые меню: скрыть неактивные группы (иначе, например, в
+        ; Статистике вылезают «Время запуска»/«Текущее время» из раздела
+        ; Информация при открытой вкладке Дашборд)
+        if n = 3
+            SwitchSettingTab(CurrentSettingTab)
+        else if n = 4
+            SwitchStatTab(CurrentStatTab)
+        else if n = 5
+            SwitchHelpTab(CurrentHelpTab)
     }
 
     ; Собираем страницы ПЕРЕД созданием навигации: конструктор NavBar

@@ -157,9 +157,14 @@ EaseOut(t) {
 ; рендер с эмодзи). Полностью совместима со старым интерфейсом StyledBtn.
 ; ═══════════════════════════════════════════════════════════════════════
 class ModernButton {
+    ; Современная кнопка на НАТИВНЫХ контролах (без GDI+-битмапов):
+    ;  - _frame — внешний контрол-рамка (цвет border), скруглён SetWindowRgn
+    ;  - _bg    — внутренний контрол-фон (цвет bg) с отступом = толщина рамки
+    ;  - ctrl   — текст поверх (BackgroundTrans)
+    ; Никаких чёрных углов, DPI-растяжений и прямоугольников за скруглением.
     __New(parent, x, y, w, h, text, callback, style := "default", tip := "") {
-        global HoverButtons, THEME
-        GdipStartup()
+        global HoverButtons
+        StartHoverPolling()
         this.parent := parent
         this.x := x
         this.y := y
@@ -172,42 +177,48 @@ class ModernButton {
         this.isHovered := false
         this.isClickable := true
         this._isActive := false
-        this._frames := []          ; кэш кадров: [1]=base [2]=mid [3]=hover (без GDI+ во время анимации)
-        this._disabledHbm := 0
-        this._activeHbm := 0
-        this._frameIdx := 1
         this._animTimer := ObjBindMethod(this, "AnimTick")
-        this._animDir := 0
+        this._step := 0
+        this._steps := 6
+        this._fromBg := []
+        this._toBg := []
+        this._fromTxt := []
+        this._toTxt := []
+        this._fromBrd := []
+        this._toBrd := []
         this._radius := (style = "close" || style = "clear" || style = "nav") ? h // 2 : Min(Round(h * 0.34), 14)
-        ; Крестики (close/clear): БЕЗ Picture-фона — только текст-кнопка.
-        ; Прозрачный битмап давал чёрный прямоугольник; текст с ховером
-        ; (краснеет) выглядит чисто и современно.
-        StartHoverPolling()
+        this._borderW := 2
         this._isGhost := (style = "close" || style = "clear")
+        this.currentBg := this.colors.bg
+        this.currentTxt := this.colors.text
+        this.currentBrd := this.colors.border
+
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
         this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
         this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
+        this.ctrl._bgCtrl := ""
+        HoverButtons.Push(this)
+
         if this._isGhost {
+            ; Крестики: только текст, никакого фона вообще
             this._bg := ""
-            this._bgCtrl := ""
-            this.ctrl._bgCtrl := ""
-            HoverButtons.Push(this)
+            this._frame := ""
             return
         }
-        ; Фон (скруглённый, с альфой) + текстовая подпись поверх.
-        ; ВАЖНО: сам контрол Picture обрезаем по скруглению (SetWindowRgn),
-        ; иначе по краям битмапа виден прямоугольник/чёрные углы
-        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
-        this._scale := GetScale(this._bg.Hwnd)
-        try RoundCorners(this._bg, Round(w * this._scale), Round(h * this._scale), Round(this._radius * this._scale))
+
+        ; Рамка (внешний слой)
+        this._frame := parent.AddText("x" x " y" y " w" w " h" h " 0x200 Background" this.colors.border, "")
+        RoundCorners(this._frame, w, h, this._radius)
+        ; Фон (внутренний, с отступом на толщину рамки)
+        bw := this._borderW
+        this._bg := parent.AddText("x" (x+bw) " y" (y+bw) " w" (w-2*bw) " h" (h-2*bw) " 0x200 Background" this.colors.bg, "")
+        RoundCorners(this._bg, w - 2*bw, h - 2*bw, Max(1, this._radius - bw))
         this._bgCtrl := this._bg
-        this.ctrl._bgCtrl := this._bg   ; для групповых переключений видимости
-        ; Клик по фону кнопки (не только по тексту) тоже срабатывает
+        this.ctrl._bgCtrl := this._bg
+        ; Клик по фону/рамке тоже срабатывает
+        try this._frame.OnEvent("Click", ObjBindMethod(this, "OnClick"))
         try this._bg.OnEvent("Click", ObjBindMethod(this, "OnClick"))
-        HoverButtons.Push(this)
-        this._Precache()
-        this._ShowFrame(1, this.colors.text)
     }
 
     GetColors(style) {
@@ -236,131 +247,62 @@ class ModernButton {
         }
     }
 
-    ; ---- Отрисовка одного кадра (только при создании/смене схемы) ----
-    _MakeBitmap(bgHex, alpha := 255) {
-        s := this._scale
-        w := Round(this.w * s)
-        h := Round(this.h * s)
-        r := Round(this._radius * s)
-        pBitmap := GdipCreateBitmap(w, h)
-        if !pBitmap
-            return 0
-        g := GdipGetGraphics(pBitmap)
-        DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
-        ; Вертикальный градиент: чуть светлее сверху, темнее снизу.
-        ; ВАЖНО: если alpha=0 (прозрачные крестики) — фон НЕ рисуем вовсе,
-        ; иначе HBITMAP с нулевой альфой даёт чёрный прямоугольник
-        if alpha > 5 {
-            bgRGB := HexToRGB(bgHex)
-            top := ShadeColor(bgRGB, 0.12)
-            bottom := ShadeColor(bgRGB, -0.10)
-            brush := GdipLineBrush(0, 0, 0, h, ARGB(alpha, top), ARGB(alpha, bottom))
-            if brush {
-                path := GdipRoundedPath(0, 0, w, h, r)
-                DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
-                DllCall("gdiplus\GdipDeletePath", "Ptr", path)
-                GdipDeleteBrush(brush)
-            }
-        }
-        ; Обводка: 2px (в DPI-пикселях) — тонкая 1px выглядела «пиксельной» и портила вид
-        borderHex := this.colors.HasOwnProp("border") ? this.colors.border : "45475a"
-        if alpha > 30 && borderHex != "" && borderHex != "000000" {
-            bw := Max(2, Round(2 * s))
-            pen := GdipPen(ARGB(alpha, HexToRGB(borderHex)), bw)
-            if pen {
-                inset := bw / 2
-                path := GdipRoundedPath(inset, inset, w - bw, h - bw, Max(1, r - Round(bw)))
-                DllCall("gdiplus\GdipDrawPath", "Ptr", g, "Ptr", pen, "Ptr", path)
-                DllCall("gdiplus\GdipDeletePath", "Ptr", path)
-                GdipDeletePen(pen)
-            }
-        }
-        hbm := GdipHBitmapFromBitmap(pBitmap)
-        GdipDeleteGraphics(g)
-        GdipDisposeImage(pBitmap)
-        return hbm
-    }
-
-    ; ---- Предрасчёт кадров анимации (base -> mid -> hover) ----
-    _Precache() {
-        for hbm in this._frames {
-            if hbm
-                DllCall("DeleteObject", "Ptr", hbm)
-        }
-        this._frames := []
-        if this._disabledHbm {
-            DllCall("DeleteObject", "Ptr", this._disabledHbm)
-            this._disabledHbm := 0
-        }
-        if this._activeHbm {
-            DllCall("DeleteObject", "Ptr", this._activeHbm)
-            this._activeHbm := 0
-        }
-        from := HexToRGB(this.colors.bg)
-        to := HexToRGB(this.colors.hover)
-        aBase := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
-        aHover := this.colors.HasOwnProp("hoverAlpha") ? this.colors.hoverAlpha : 255
-        for k in [0, 0.5, 1] {
-            r := Round(from[1] + (to[1] - from[1]) * k)
-            g := Round(from[2] + (to[2] - from[2]) * k)
-            b := Round(from[3] + (to[3] - from[3]) * k)
-            a := Round(aBase + (aHover - aBase) * k)
-            this._frames.Push(this._MakeBitmap(RGBToHex(r, g, b), a))
-        }
-    }
-
-    _GetDisabled() {
-        if !this._disabledHbm
-            this._disabledHbm := this._MakeBitmap("2b2b42", 255)
-        return this._disabledHbm
-    }
-
-    _GetActive() {
-        if !this._activeHbm && this.colors.HasOwnProp("activeBg")
-            this._activeHbm := this._MakeBitmap(this.colors.activeBg, 255)
-        return this._activeHbm
-    }
-
-    ; ---- Показ кадра из кэша (дешёвая операция) ----
-    _ShowFrame(idx, textCol := "") {
-        ; Ghost-кнопки (крестики): фона нет — только цвет текста
+    ; ---- Применить цвета (мгновенно) ----
+    _ApplyColors(bg, txt, brd := "") {
         if this._isGhost {
-            if textCol != ""
-                try this.ctrl.Opt("c" textCol)
+            try this.ctrl.Opt("c" txt)
             return
         }
-        hbm := 0
-        if idx = "disabled"
-            hbm := this._GetDisabled()
-        else if idx = "active"
-            hbm := this._GetActive()
-        else {
-            if idx = this._frameIdx && textCol = ""
-                return
-            if idx < 1 || idx > this._frames.Length
-                return
-            hbm := this._frames[idx]
-            this._frameIdx := idx
-        }
-        if !hbm
-            return
-        try this._bg.Value := "HBITMAP:*" hbm
-        if textCol != ""
-            try this.ctrl.Opt("c" textCol)
+        try this._bg.Opt("Background" bg)
+        try this.ctrl.Opt("c" txt)
+        if brd != ""
+            try this._frame.Opt("Background" brd)
     }
 
-    ; ---- Плавный ховер через переключение кэшированных кадров ----
+    ; ---- Плавный переход цвета (ховер) ----
+    _AnimateTo(targetBg, targetTxt, targetBrd := "") {
+        this._fromBg := HexToRGB(this.currentBg)
+        this._toBg := HexToRGB(targetBg)
+        this._fromTxt := HexToRGB(this.currentTxt)
+        this._toTxt := HexToRGB(targetTxt)
+        this._fromBrd := HexToRGB(this.currentBrd)
+        this._toBrd := HexToRGB(targetBrd = "" ? this.currentBrd : targetBrd)
+        this._step := 0
+        SetTimer(this._animTimer, 0)
+        SetTimer(this._animTimer, 15)
+    }
+
+    AnimTick() {
+        this._step++
+        t := Min(1, this._step / this._steps)
+        e := EaseOut(t)
+        bg := RGBToHex(LerpArr(this._fromBg, this._toBg, e))
+        tx := RGBToHex(LerpArr(this._fromTxt, this._toTxt, e))
+        br := RGBToHex(LerpArr(this._fromBrd, this._toBrd, e))
+        this._ApplyColors(bg, tx, br)
+        this.currentBg := bg
+        this.currentTxt := tx
+        this.currentBrd := br
+        if this._step >= this._steps {
+            this._ApplyColors(RGBToHex(this._toBg), RGBToHex(this._toTxt), RGBToHex(this._toBrd))
+            this.currentBg := RGBToHex(this._toBg)
+            this.currentTxt := RGBToHex(this._toTxt)
+            this.currentBrd := RGBToHex(this._toBrd)
+            SetTimer(this._animTimer, 0)
+        }
+    }
+
     SetHover(state) {
         if !this.isClickable {
             SetTimer(this._animTimer, 0)
-            this._ShowFrame("disabled", "76769a")
+            this._ApplyColors("2b2b42", "76769a", "3f3f62")
             try DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", 32512, "Ptr"))
             return
         }
         if this.isHovered = state
             return
         this.isHovered := state
-        ; Курсор-«рука» (IDC_HAND = 32649) при наведении, обычная стрелка (32512) при уходе
+        ; Курсор-«рука» (IDC_HAND = 32649) при наведении, стрелка (32512) при уходе
         try DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
         if state {
             if this.tip != ""
@@ -370,27 +312,17 @@ class ModernButton {
         }
         if this._isActive && this.colors.HasOwnProp("activeBg")
             return
-        this._animDir := state ? 1 : -1
-        SetTimer(this._animTimer, 0)
-        SetTimer(this._animTimer, 12)
-    }
-
-    AnimTick() {
-        ni := this._frameIdx + this._animDir
-        if this._animDir > 0 && ni > this._frames.Length {
-            ni := this._frames.Length
-            SetTimer(this._animTimer, 0)
-        } else if this._animDir < 0 && ni < 1 {
-            ni := 1
-            SetTimer(this._animTimer, 0)
+        if state {
+            ; Ховер: светлее фон + светлее рамка + ярче текст
+            this._AnimateTo(this.colors.hover,
+                this.colors.HasOwnProp("textHover") ? this.colors.textHover : this.colors.text,
+                ShadeColorHex(this.colors.border, 0.25))
+        } else {
+            this._AnimateTo(this.colors.bg, this.colors.text, this.colors.border)
         }
-        textCol := this.colors.text
-        if this._animDir > 0 && this.colors.HasOwnProp("textHover")
-            textCol := this.colors.textHover
-        this._ShowFrame(ni, textCol)
     }
 
-    ; ---- Активное состояние (для сегментов и сайд-меню) ----
+    ; ---- Активное состояние (пилюли, сегменты) ----
     SetActive(flag) {
         if this._isActive = flag
             return
@@ -398,83 +330,84 @@ class ModernButton {
         SetTimer(this._animTimer, 0)
         if flag && this.colors.HasOwnProp("activeBg") {
             this.isHovered := false
-            this._ShowFrame("active", this.colors.HasOwnProp("activeText") ? this.colors.activeText : this.colors.text)
+            this._ApplyColors(this.colors.activeBg,
+                this.colors.HasOwnProp("activeText") ? this.colors.activeText : this.colors.text,
+                this.colors.border)
         } else {
-            this._frameIdx := 1
-            this._ShowFrame(1, this.colors.text)
+            this._ApplyColors(this.colors.bg, this.colors.text, this.colors.border)
         }
     }
 
-    ; ---- Включено/выключено (серый) ----
+    ; ---- Включено/выключено ----
     SetEnabledState(isActive, style := "success") {
         SetTimer(this._animTimer, 0)
         if isActive {
             this.colors := this.GetColors(style)
             this.isClickable := true
             this.isHovered := false
-            this._Precache()
-            this._frameIdx := 1
-            this._ShowFrame(1, this.colors.text)
+            this._ApplyColors(this.colors.bg, this.colors.text, this.colors.border)
         } else {
             this.isClickable := false
-            this._ShowFrame("disabled", "76769a")
+            this._ApplyColors("2b2b42", "76769a", "3f3f62")
         }
     }
 
-    ; ---- Смена цветовой схемы на лету ----
     SetColorScheme(colors) {
         this.colors := colors
-        this._Precache()
-        this._frameIdx := 1
-        this._ShowFrame(1, colors.text)
+        this._ApplyColors(colors.bg, colors.text, colors.border)
     }
 
     SetVisible(v) {
-        try this._bg.Visible := v
+        if !this._isGhost {
+            try this._frame.Visible := v
+            try this._bg.Visible := v
+        }
         try this.ctrl.Visible := v
     }
 
-    ; Поднимает кнопку в самый верх Z-порядка окна.
-    ; Нужно для контролов поверх Tab-контрола: без этого нативный
-    ; Tab3 рисуется ПОВЕРХ наших кнопок (старые вкладки «пробивают» панель)
-    ; ВНИМАНИЕ: WinSetTop() как функция НЕ существует в AHK v2,
-    ; поэтому поднимаем через user32\SetWindowPos (HWND_TOP = -1)
     BringToTop() {
-        if this._isGhost
+        if this._isGhost {
+            try DllCall("user32\SetWindowPos", "Ptr", this.ctrl.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
             return
+        }
+        try DllCall("user32\SetWindowPos", "Ptr", this._frame.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
         try DllCall("user32\SetWindowPos", "Ptr", this._bg.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
         try DllCall("user32\SetWindowPos", "Ptr", this.ctrl.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
     }
 
-    ; ---- Освобождение битмапов (при уничтожении окна) ----
     _FreeBitmaps() {
-        for hbm in this._frames {
-            if hbm
-                DllCall("DeleteObject", "Ptr", hbm)
-        }
-        this._frames := []
-        if this._disabledHbm {
-            DllCall("DeleteObject", "Ptr", this._disabledHbm)
-            this._disabledHbm := 0
-        }
-        if this._activeHbm {
-            DllCall("DeleteObject", "Ptr", this._activeHbm)
-            this._activeHbm := 0
-        }
+        ; нативные кнопки не держат битмапов — нечего освобождать
     }
 
     OnClick(*) {
         if !this.isClickable
             return
         ; Эффект нажатия: лёгкое вдавливание
-        try this._bg.Move(this.x + 1, this.y + 1)
+        if !this._isGhost {
+            try this._frame.Move(this.x + 1, this.y + 1)
+            try this._bg.Move(this.x + 1 + this._borderW, this.y + 1 + this._borderW)
+        }
         try this.ctrl.Move(this.x + 1, this.y + 1)
         Sleep(40)
-        try this._bg.Move(this.x, this.y)
+        if !this._isGhost {
+            try this._frame.Move(this.x, this.y)
+            try this._bg.Move(this.x + this._borderW, this.y + this._borderW)
+        }
         try this.ctrl.Move(this.x, this.y)
         Sleep(10)
         this.callback.Call()
     }
+}
+
+; Промежуточная интерполяция для анимации
+LerpArr(from, to, t) {
+    return [from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t, from[3] + (to[3] - from[3]) * t]
+}
+
+; Осветлить hex-цвет (f > 0 к белому)
+ShadeColorHex(c, f) {
+    rgb := HexToRGB(c)
+    return RGBToHex(rgb[1] + (255 - rgb[1]) * f, rgb[2] + (255 - rgb[2]) * f, rgb[3] + (255 - rgb[3]) * f)
 }
 
 ; ═══════════════════════════════════════════════════════════════════════
