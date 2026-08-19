@@ -43,6 +43,11 @@ BuildMainGui() {
     MainGui.SetFont("s11 bold", "Segoe UI")
     MainGui.AddText("x20 y10 w600 h25 c" THEME["accent"] " BackgroundTrans", "🏥 " APP_NAME " v" VERSION)
     
+    ; Статус автосохранения (справа от заголовка, слева от кнопки закрытия)
+    MainGui.SetFont("s8 norm", "Segoe UI")
+    MainGui.AddText("x610 y13 w300 Right c" THEME["success"] " BackgroundTrans vAutoSaveStatus",
+        (CFG["autoSave"] ? "💾 Автосохранение: вкл" : "💾 Автосохранение: выкл"))
+
     CloseBtn := MainGui.AddText("x920 y0 w40 h40 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
     CloseBtn.OnEvent("Click", (*) => MainGui.Hide())
     
@@ -133,7 +138,7 @@ BuildMainGui() {
     
     y += 60
     ; Кнопка сохранения профиля
-    g_BtnSaveProfile := CreateStyledButton(MainGui, xIn, y, 410, 40, "✅ Сохранить данные врача", (*) => ApplyProfile(), "success")
+    g_BtnSaveProfile := CreateStyledButton(MainGui, xIn, y, 410, 40, "✅ Сохранить данные врача", (*) => ApplyProfile(), "success", "Сохранить имя, больницу и специальность")
     UpdateButtonState(g_BtnSaveProfile, false)
     
     ; Подсказка в самом низу карточки
@@ -185,8 +190,8 @@ BuildMainGui() {
     yIn := y + 60
     
     ; Ряд 1: Оверлей и Релоад (ВСЕ СИНИЕ)
-    CreateStyledButton(MainGui, xIn, yIn, 200, 45, "👁️ Оверлей", (*) => ToggleOverlay(), "info")
-    CreateStyledButton(MainGui, xIn+210, yIn, 200, 45, "🔄 Обновить бинды", (*) => RegisterAllHotkeys(), "info")
+    CreateStyledButton(MainGui, xIn, yIn, 200, 45, "👁️ Оверлей", (*) => ToggleOverlay(), "info", "Показать/скрыть внутриигровой оверлей")
+    CreateStyledButton(MainGui, xIn+210, yIn, 200, 45, "🔄 Обновить бинды", (*) => RegisterAllHotkeys(), "info", "Перерегистрировать горячие клавиши биндов")
     
     yIn += 65
     MainGui.SetFont("s9 bold", "Segoe UI")
@@ -194,14 +199,14 @@ BuildMainGui() {
     
     yIn += 25
     ; Ряд 2: Файлы (ВСЕ СИНИЕ)
-    CreateStyledButton(MainGui, xIn, yIn, 200, 40, "📥 Загрузить файл", (*) => LoadProfileDialog(), "info")
-    CreateStyledButton(MainGui, xIn+210, yIn, 200, 40, "📤 Сохранить файл", (*) => SaveProfileDialog(), "info")    
+    CreateStyledButton(MainGui, xIn, yIn, 200, 40, "📥 Загрузить файл", (*) => LoadProfileDialog(), "info", "Импорт профиля из файла .ini или .aci")
+    CreateStyledButton(MainGui, xIn+210, yIn, 200, 40, "📤 Сохранить файл", (*) => SaveProfileDialog(), "info", "Экспорт биндов в отдельный файл .ini")    
     
     ; --- ПОДВАЛ: ГЛОБАЛЬНЫЕ КНОПКИ ---
     yBottom := 650
     
     ; Огромная кнопка сохранения
-    g_BtnGlobalSave := CreateStyledButton(MainGui, xRight, yBottom, colW, 50, "💾 СОХРАНИТЬ ВСЕ ИЗМЕНЕНИЯ", (*) => SaveEverything(), "success")
+    g_BtnGlobalSave := CreateStyledButton(MainGui, xRight, yBottom, colW, 50, "💾 СОХРАНИТЬ ВСЕ ИЗМЕНЕНИЯ", (*) => SaveEverything(), "success", "Сохранить бинды, настройки и фильтры")
     
     if GlobalUnsavedChanges {
         UpdateButtonState(g_BtnGlobalSave, true, "warning")
@@ -211,7 +216,7 @@ BuildMainGui() {
     }
     
     ; Кнопка отмены слева
-    CreateStyledButton(MainGui, xLeft, yBottom, colW, 50, "🔙 Отменить последнее действие", (*) => Undo(), "warning")
+    CreateStyledButton(MainGui, xLeft, yBottom, colW, 50, "🔙 Отменить последнее действие", (*) => Undo(), "warning", "Откатить последнее изменение биндов")
 
     ; ==============================================================================
     ; 2. БИНДЫ (MODERN MANAGER LAYOUT)
@@ -1261,6 +1266,7 @@ RefreshMainGui() {
         ; -------------------------------
         
         UpdateStatsDisplay()
+        UpdateAutoSaveStatus()
     }
 }
 
@@ -1457,12 +1463,30 @@ ShowMainGui() {
     RefreshBindList()
 
     MainGui.Show("w960 h760")
+    FadeInGui(MainGui)   ; плавное появление окна
     
     try {
         lv := MainGui["BindList"]
         style := DllCall("GetWindowLong", "Ptr", lv.Hwnd, "Int", -16, "Int")
         DllCall("SetWindowLong", "Ptr", lv.Hwnd, "Int", -16, "Int", style & ~0x100000)
         DllCall("ShowScrollBar", "Ptr", lv.Hwnd, "Int", 0, "Int", 0) 
+    }
+}
+
+; Обновляет подпись статуса автосохранения в заголовке окна
+UpdateAutoSaveStatus() {
+    global MainGui, CFG, STATE, THEME
+    if !MainGui
+        return
+    try {
+        if !CFG["autoSave"] {
+            MainGui["AutoSaveStatus"].Text := "💾 Автосохранение: выкл"
+            MainGui["AutoSaveStatus"].Opt("c" THEME["textMuted"])
+            return
+        }
+        t := STATE["lastAutoSave"] != "" ? " • " FormatTime(STATE["lastAutoSave"], "HH:mm:ss") : ""
+        MainGui["AutoSaveStatus"].Text := "💾 Автосохранение: вкл" t
+        MainGui["AutoSaveStatus"].Opt("c" THEME["success"])
     }
 }
 

@@ -6,7 +6,7 @@
 ; он подключается через #Include из google.ahk
 ;
 class StyledBtn {
-    __New(parent, x, y, w, h, text, callback, style := "default") {
+    __New(parent, x, y, w, h, text, callback, style := "default", tip := "") {
         global HoverButtons, THEME
         this.parent := parent
         this.x := x
@@ -15,9 +15,13 @@ class StyledBtn {
         this.h := h
         this.callback := callback
         this.style := style
+        this.tip := tip
         this.colors := this.GetColors(style)
+        this.currentBg := this.colors.bg
         this.isHovered := false
-        this.isClickable := true 
+        this.isClickable := true
+        ; Единый bound-объект таймера для плавной смены цвета
+        this._animTimer := this.AnimTick
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 Background" this.colors.bg " c" this.colors.text, text)
         this.ctrl.SetFont("s9 bold", "Segoe UI")
         this.ctrl.OnEvent("Click", (*) => this.OnClick())
@@ -44,19 +48,88 @@ class StyledBtn {
     }
     SetHover(state) {
         if !this.isClickable {
+            SetTimer(this._animTimer, 0)
+            this.currentBg := "252525"
             this.ctrl.Opt("Background252525 c555555")
             return
         }
         if this.isHovered = state
             return
         this.isHovered := state
-        this.ctrl.Opt("Background" (state ? this.colors.hover : this.colors.bg))
-        this.ctrl.Redraw()
+
+        ; Подсказка (tooltip) — показываем только если задана
+        if state {
+            if this.tip != ""
+                ToolTip(this.tip, , , 1000)
+        } else {
+            ToolTip(, , , 1000)
+        }
+
+        ; Плавный переход цвета фона
+        this.AnimateBg(state ? this.colors.hover : this.colors.bg)
+    }
+    AnimateBg(target) {
+        this._target := target
+        this._from := HexToRGB(this.currentBg)
+        this._to := HexToRGB(target)
+        this._step := 0
+        this._steps := 6
+        SetTimer(this._animTimer, 0)
+        SetTimer(this._animTimer, 15)
+    }
+    AnimTick() {
+        this._step++
+        t := Min(1, this._step / this._steps)
+        r := this._from[1] + (this._to[1] - this._from[1]) * t
+        g := this._from[2] + (this._to[2] - this._from[2]) * t
+        b := this._from[3] + (this._to[3] - this._from[3]) * t
+        this.currentBg := RGBToHex(r, g, b)
+        try {
+            this.ctrl.Opt("Background" this.currentBg)
+            this.ctrl.Redraw()
+        }
+        if this._step >= this._steps {
+            this.currentBg := this._target
+            try this.ctrl.Opt("Background" this.currentBg)
+            SetTimer(this._animTimer, 0)
+        }
     }
 }
 
-CreateStyledButton(parent, x, y, w, h, text, callback, style := "default") {
-    return StyledBtn(parent, x, y, w, h, text, callback, style)
+; ───────────────────────────────────────────────────────────────────
+; Вспомогательные функции для плавной анимации цвета
+; ───────────────────────────────────────────────────────────────────
+HexToRGB(c) {
+    c := Trim(c)
+    if StrLen(c) < 6
+        return [0, 0, 0]
+    return [Integer("0x" SubStr(c, 1, 2)), Integer("0x" SubStr(c, 3, 2)), Integer("0x" SubStr(c, 5, 2))]
+}
+
+RGBToHex(r, g, b) {
+    return Format("{:02X}{:02X}{:02X}", Round(r), Round(g), Round(b))
+}
+
+CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip := "") {
+    return StyledBtn(parent, x, y, w, h, text, callback, style, tip)
+}
+
+; ───────────────────────────────────────────────────────────────────
+; Плавное появление окна (fade-in)
+; ───────────────────────────────────────────────────────────────────
+FadeInGui(gui, steps := 12, interval := 12) {
+    try {
+        WinSetTransparent(0, gui)
+        step := 255 // steps
+        Loop steps {
+            try WinSetTransparent(A_Index * step, gui)
+            Sleep interval
+        }
+        WinSetTransparent("Off", gui)
+    } catch {
+        ; Если анимация не удалась — просто оставляем окно как есть
+        try WinSetTransparent("Off", gui)
+    }
 }
 
 WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {

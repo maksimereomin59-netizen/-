@@ -81,7 +81,8 @@ global STATE := Map(
     "overlayInputMode", false,
     "tempId", "",
     "overlayMode", "full",
-    "lastSmsNum", ""
+    "lastSmsNum", "",
+    "lastAutoSave", ""
 )
 
 global STATS := Map("totalSent", 0, "patientsHealed", 0, "pillsGiven", 0, "injectionsGiven", 0, "operationsDone", 0, "medChecks", 0, "vaccinesGiven", 0, "sessionStart", A_Now)

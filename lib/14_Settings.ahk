@@ -239,7 +239,9 @@ AutoSaveTick() {
         SaveConfig()
         SaveCustomFilters()
         GlobalUnsavedChanges := false
+        STATE["lastAutoSave"] := A_Now
         TryRestoreButtonText()
+        UpdateAutoSaveStatus()
         Log("Автосохранение выполнено", "INFO")
         ShowNotify("💾 Автосохранение", "success", 1500)
     } catch as err {
