@@ -196,29 +196,38 @@ class ModernButton {
         this.currentTxt := this.colors.text
         this.currentBrd := this.colors.border
 
-        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
-        fsize := w >= 300 ? 10 : 9
-        this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
-        this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
-        this.ctrl._bgCtrl := ""
-        HoverButtons.Push(this)
-
+        ; ВАЖНЫЙ ПОРЯДОК СОЗДАНИЯ (z-order в AHK: новый контрол — ВЫШЕ):
+        ; 1) рамка (самый нижний слой)
+        ; 2) фон (поверх рамки)
+        ; 3) текст (САМЫЙ ВЕРХ) — иначе фон перекрывает текст кнопки
         if this._isGhost {
             ; Крестики: только текст, никакого фона вообще
+            this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
+            fsize := w >= 300 ? 10 : 9
+            this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
+            this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
+            this.ctrl._bgCtrl := ""
             this._bg := ""
             this._frame := ""
+            HoverButtons.Push(this)
             return
         }
 
-        ; Рамка (внешний слой)
+        ; 1. Рамка (внешний слой)
         this._frame := parent.AddText("x" x " y" y " w" w " h" h " 0x200 Background" this.colors.border, "")
         RoundCorners(this._frame, w, h, this._radius)
-        ; Фон (внутренний, с отступом на толщину рамки)
+        ; 2. Фон (внутренний, с отступом на толщину рамки)
         bw := this._borderW
         this._bg := parent.AddText("x" (x+bw) " y" (y+bw) " w" (w-2*bw) " h" (h-2*bw) " 0x200 Background" this.colors.bg, "")
         RoundCorners(this._bg, w - 2*bw, h - 2*bw, Max(1, this._radius - bw))
         this._bgCtrl := this._bg
+        ; 3. Текст (самый верх)
+        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
+        fsize := w >= 300 ? 10 : 9
+        this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
+        this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
         this.ctrl._bgCtrl := this._bg
+        HoverButtons.Push(this)
         ; Клик по фону/рамке тоже срабатывает
         try this._frame.OnEvent("Click", ObjBindMethod(this, "OnClick"))
         try this._bg.OnEvent("Click", ObjBindMethod(this, "OnClick"))
