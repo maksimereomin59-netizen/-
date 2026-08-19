@@ -1,0 +1,6 @@
+# Файл с приватным токеном Telegram — не публикуем
+telegram.ini
+
+# Конфиги пользователя (создаются при работе скрипта)
+doctor_config.ini
+doctor_filters.ini
