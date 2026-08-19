@@ -170,11 +170,11 @@ class ModernButton {
         this._frameIdx := 1
         this._animTimer := ObjBindMethod(this, "AnimTick")
         this._animDir := 0
-        this._radius := (style = "close" || style = "clear") ? h // 2 : Min(Round(h * 0.34), 14)
+        this._radius := (style = "close" || style = "clear" || style = "nav") ? h // 2 : Min(Round(h * 0.34), 14)
         ; Фон (скруглённый, с альфой) + текстовая подпись поверх
-        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
+        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 0x04000000 BackgroundTrans", "")
         this._bgCtrl := this._bg
-        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
+        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 0x04000000 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
         this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
         this.ctrl.OnEvent("Click", (*) => this.OnClick())
@@ -206,7 +206,7 @@ class ModernButton {
             case "segmented":
                 return {bg: "36385a", hover: "4a4e78", text: "c8cde8", textHover: "f0f2ff", border: "565a88", activeBg: "89b4fa", activeText: "181825"}
             case "nav":
-                return {bg: "000000", hover: "40446a", text: "b4bcd8", textHover: "ffffff", border: "4a4e78", alpha: 0, activeBg: "89b4fa", activeText: "181825"}
+                return {bg: "000000", hover: "454a74", text: "c6cbe4", textHover: "ffffff", border: "000000", alpha: 0, hoverAlpha: 110, activeBg: "89b4fa", activeText: "181825"}
             default:
                 return {bg: "34364e", hover: "4a4e70", text: "e6e9f7", textHover: "ffffff", border: "63678f"}
         }
@@ -280,7 +280,7 @@ class ModernButton {
 
     _GetDisabled() {
         if !this._disabledHbm
-            this._disabledHbm := this._MakeBitmap("20202b", 255)
+            this._disabledHbm := this._MakeBitmap("2b2b42", 255)
         return this._disabledHbm
     }
 
@@ -316,7 +316,7 @@ class ModernButton {
     SetHover(state) {
         if !this.isClickable {
             SetTimer(this._animTimer, 0)
-            this._ShowFrame("disabled")
+            this._ShowFrame("disabled", "76769a")
             return
         }
         if this.isHovered = state
@@ -377,7 +377,7 @@ class ModernButton {
             this._ShowFrame(1, this.colors.text)
         } else {
             this.isClickable := false
-            this._ShowFrame("disabled")
+            this._ShowFrame("disabled", "76769a")
         }
     }
 
@@ -392,6 +392,14 @@ class ModernButton {
     SetVisible(v) {
         try this._bg.Visible := v
         try this.ctrl.Visible := v
+    }
+
+    ; Поднимает кнопку в самый верх Z-порядка окна.
+    ; Нужно для контролов поверх Tab-контрола: без этого нативный
+    ; Tab3 рисуется ПОВЕРХ наших кнопок (старые вкладки «пробивают» панель)
+    BringToTop() {
+        try WinSetTop("ahk_id " this._bg.Hwnd)
+        try WinSetTop("ahk_id " this.ctrl.Hwnd)
     }
 
     ; ---- Освобождение битмапов (при уничтожении окна) ----
@@ -479,25 +487,12 @@ ModernPanel(parent, x, y, w, h, fill := "", accent := "", radius := 14, border :
 ; — плавающий индикатор-пилюля (анимированный слайд)
 ; — fade-переход содержимого при переключении
 ; ═══════════════════════════════════════════════════════════════════════
-; Пункт навигации (класс нужен, чтобы SetHover был настоящим методом)
-class NavItem {
-    __New(nav, idx, ctrl, gui) {
-        this.nav := nav
-        this.idx := idx
-        this.ctrl := ctrl
-        this.parent := gui
-        this.isClickable := true
-        this.id := idx
-    }
-    SetHover(state) {
-        global THEME
-        if this.idx = this.nav.active
-            return
-        try this.ctrl.Opt("c" (state ? THEME["text"] : THEME["textDim"]))
-        try this.ctrl.Redraw()
-    }
-}
-
+; ═══════════════════════════════════════════════════════════════════════
+; СОВРЕМЕННАЯ НАВИГАЦИЯ ПО ВКЛАДКАМ (пилюли-кнопки)
+; Каждый пункт — полноценная кнопка ModernButton:
+; неактивная — прозрачная с мягким ховером, активная — яркая пилюля.
+; Никаких анимированных индикаторов и таймеров — переключение мгновенное.
+; ═══════════════════════════════════════════════════════════════════════
 class ModernNavBar {
     __New(gui, tabs, labels, x, y, w, h) {
         global THEME, HoverButtons
@@ -505,95 +500,33 @@ class ModernNavBar {
         this.gui := gui
         this.tabs := tabs
         this.items := []
-        this.active := 1
-        this._step := 0
-        this._steps := 8
-        this._fromX := 0
-        this._toX := 0
-        this._anim := ObjBindMethod(this, "Tick")
-        this._indHbm := 0
+        this.active := 0
         itemW := Round(w / labels.Length)
-        this.itemW := itemW
-        this.indW := Min(96, itemW - 24)
-        this.indH := 3
-        this.indY := y + h + 1
+        bw := itemW - 18
         for i, label in labels {
-            ix := x + (i - 1) * itemW
-            t := gui.AddText("x" ix " y" y " w" itemW " h" h " Center 0x200 Background" THEME["bgLight"] " c" (i = 1 ? THEME["accent"] : THEME["textDim"]), label)
-            t.SetFont("s10 bold", "Segoe UI")
-            t.OnEvent("Click", ((idx) => (*) => this.Select(idx))(i))
-            item := NavItem(this, i, t, gui)
-            this.items.Push({ctrl: t, id: i, item: item})
-            HoverButtons.Push(item)
+            ix := x + (i - 1) * itemW + (itemW - bw) // 2
+            btn := ModernButton(gui, ix, y, bw, h, label, ((idx) => (*) => this.Select(idx))(i), "nav")
+            btn.ctrl.SetFont("s10 bold", "Segoe UI")
+            btn.BringToTop()   ; поверх Tab3 — нативные вкладки не «пробивают»
+            this.items.Push({btn: btn, id: i})
         }
-        ; Индикатор (пилюля под активным пунктом)
-        this.indicator := gui.AddPicture("x" (x + (itemW - this.indW) // 2) " y" this.indY " w" this.indW " h" this.indH " BackgroundTrans", "")
-        this.indX := x + (itemW - this.indW) // 2
-        this._RenderIndicator(THEME["accent"])
+        this.Select(1, true)
     }
 
-    _RenderIndicator(color) {
-        GdipStartup()
-        w := this.indW
-        h := this.indH
-        pBitmap := GdipCreateBitmap(w, h)
-        if !pBitmap
-            return
-        g := GdipGetGraphics(pBitmap)
-        DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
-        GdipFillRounded(g, 0, 0, w, h, h / 2, ARGB(255, HexToRGB(color)))
-        hbm := GdipHBitmapFromBitmap(pBitmap)
-        GdipDeleteGraphics(g)
-        GdipDisposeImage(pBitmap)
-        if this._indHbm
-            DllCall("DeleteObject", "Ptr", this._indHbm)
-        this._indHbm := hbm
-        try this.indicator.Value := "HBITMAP:*" hbm
-    }
-
-    Select(idx) {
+    Select(idx, force := false) {
         global THEME
-        ; Батчим перерисовку окна: переключение вкладки происходит
-        ; одним махом, без мерцания и «прыжков» нативного Tab3.
-        ; ВНИМАНИЕ: в AHK v2 "-Redraw" ОТКЛЮЧАЕТ перерисовку, "+Redraw" включает.
+        if !force && this.active = idx
+            return
+        ; Батчим перерисовку: переключение вкладки и подсветка пилюль
+        ; происходят в одном кадре — без мерцания и «скачков»
         try this.gui.Opt("-Redraw")
-        ok := true
         try this.tabs.Choose(idx)
-        catch
-            ok := false
+        for item in this.items {
+            act := (item.id = idx)
+            item.btn.SetActive(act)
+        }
         try this.gui.Opt("+Redraw")
-        if !ok
-            return
-        oldIdx := this.active
         this.active := idx
-        ; Смена цвета пунктов
-        for i, item in this.items {
-            act := (i = idx)
-            try item.ctrl.Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
-            try item.ctrl.Redraw()
-        }
-        ; Повторный клик по уже активной вкладке — просто переключили, без анимации
-        if oldIdx = idx
-            return
-        ; Анимация индикатора от старой позиции к новой
-        this._fromX := this.indX
-        this._toX := this.indX + (idx - oldIdx) * this.itemW
-        this._step := 0
-        SetTimer(this._anim, 0)
-        SetTimer(this._anim, 16)
-    }
-
-    Tick() {
-        this._step++
-        t := Min(1, this._step / this._steps)
-        e := EaseOut(t)
-        nx := Round(this._fromX + (this._toX - this._fromX) * e)
-        try this.indicator.Move(nx, this.indY)
-        if this._step >= this._steps {
-            this.indX := this._toX
-            try this.indicator.Move(this.indX, this.indY)
-            SetTimer(this._anim, 0)
-        }
     }
 }
 

@@ -12,29 +12,29 @@ global APP_NAME := Constants.APP_NAME  ; <--- Этой строки не хва�
 global AUTHOR := Constants.AUTHOR      ; <--- И этой тоже
 
 global THEME := Map(
-    "bg",           "181825",
-    "bgLight",      "1e1e2e",
-    "bgHighlight",  "313244",
-    "bgSelected",   "45475a",
+    "bg",           "1d1d2c",
+    "bgLight",      "24243a",
+    "bgHighlight",  "3b3b58",
+    "bgSelected",   "52527e",
     "accent",       "89b4fa",
-    "accentDark",   "585b70",
+    "accentDark",   "63688a",
     "accentLight",  "b4befe",
     "accentGlow",   "89b4fa",
     "success",      "a6e3a1",
-    "successDark",  "588c5e",
+    "successDark",  "6aa873",
     "warning",      "f9e2af",
-    "warningDark",  "df8e1d",
+    "warningDark",  "e8a23a",
     "error",        "f38ba8",
-    "errorDark",    "e64553",
-    "text",         "cdd6f4",
-    "textDim",      "a6adc8",
-    "textMuted",    "6c7086",
-    "border",       "313244",
-    "borderLight",  "45475a",
+    "errorDark",    "f0576a",
+    "text",         "e6e9f8",
+    "textDim",      "bbc2de",
+    "textMuted",    "8b91ad",
+    "border",       "3f3f62",
+    "borderLight",  "565680",
     "borderGlow",   "89b4fa",
-    "bgHover",      "3b3d4f",
-    "btnBg",        "313244",
-    "btnBgHover",   "45475a"
+    "bgHover",      "4b4d70",
+    "btnBg",        "3c3c5e",
+    "btnBgHover",   "4e4e72"
 )
 
 global CFG := Map(

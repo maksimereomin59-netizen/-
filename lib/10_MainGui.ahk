@@ -56,11 +56,14 @@ BuildMainGui() {
     ; === 3. ВКЛАДКИ ===
     ; Нативный Tab3 используется только для группировки/скрытия контента,
     ; его собственные заголовки мы прячем и рисуем современную панель навигации.
-    ; WS_CLIPSIBLINGS (0x04000000): нативный Tab3 при перерисовке не будет
-    ; закрашивать нашу панель навигации — убирает «старые вкладки» и мерцание
+    ; WS_CLIPSIBLINGS (0x04000000): нативный Tab3 не должен закрашивать
+    ; нашу панель навигации (она лежит поверх него в Z-порядке)
     tabs := MainGui.AddTab3("x10 y50 w940 h700 0x04000000 Background" THEME["bgLight"] " c" THEME["text"],
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
-    try SendMessage(0x1329, 0, 1, tabs.Hwnd)   ; TCM_SETITEMSIZE: заголовки = 1px (скрыты)
+    try tabs.Opt("+0x04000000")
+    ; TCM_SETITEMSIZE (0x1329): высота нативных заголовков = 0
+    ; (ширина=0, высота=0 — упаковано в lParam старшим словом)
+    try SendMessage(0x1329, 0, 0, tabs.Hwnd)
 
     ; ==============================================================================
     ; 1. ГЛАВНАЯ (PERFECT GRID ALIGNMENT)
@@ -1082,8 +1085,12 @@ BuildMainGui() {
     ; (анимированный индикатор-пилюля, hover-эффекты, fade-переход содержимого)
     ; ==============================================================================
     tabs.UseTab(0)   ; навигация не привязана ни к одной вкладке — видна всегда
-    MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
-    MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
+    navStrip := MainGui.AddText("x0 y50 w960 h40 0x04000000 Background" THEME["bgLight"], "")
+    navSep := MainGui.AddText("x0 y89 w960 h1 0x04000000 Background" THEME["border"], "")
+    ; Поднимаем полосу над Tab3: нативные заголовки физически не смогут
+    ; рисоваться поверх нашей панели навигации
+    try WinSetTop("ahk_id " navStrip.Hwnd)
+    try WinSetTop("ahk_id " navSep.Hwnd)
 
     global NavBar := CreateModernNavBar(MainGui, tabs,
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"],
