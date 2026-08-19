@@ -397,7 +397,8 @@ class ModernButton {
     ; Поднимает кнопку в самый верх Z-порядка окна.
     ; Нужно для контролов поверх Tab-контрола: без этого нативный
     ; Tab3 рисуется ПОВЕРХ наших кнопок (старые вкладки «пробивают» панель)
-    ; ВНИМАНИЕ: WinSetTop — это команда WinSet, Top, в функциональном виде
+    ; ВНИМАНИЕ: WinSetTop() как функция НЕ существует в AHK v2,
+    ; поэтому поднимаем через user32\SetWindowPos (HWND_TOP = -1)
     BringToTop() {
         try DllCall("user32\SetWindowPos", "Ptr", this._bg.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
         try DllCall("user32\SetWindowPos", "Ptr", this.ctrl.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)

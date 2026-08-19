@@ -1088,9 +1088,11 @@ BuildMainGui() {
     navStrip := MainGui.AddText("x0 y50 w960 h40 0x04000000 Background" THEME["bgLight"], "")
     navSep := MainGui.AddText("x0 y89 w960 h1 0x04000000 Background" THEME["border"], "")
     ; Поднимаем полосу над Tab3: нативные заголовки физически не смогут
-    ; рисоваться поверх нашей панели навигации
-    try WinSetTop("ahk_id " navStrip.Hwnd)
-    try WinSetTop("ahk_id " navSep.Hwnd)
+    ; рисоваться поверх нашей панели навигации.
+    ; ВНИМАНИЕ: WinSetTop() как функция НЕ существует в AHK v2 — используем
+    ; SetWindowPos с HWND_TOP (-1)
+    try DllCall("user32\SetWindowPos", "Ptr", navStrip.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
+    try DllCall("user32\SetWindowPos", "Ptr", navSep.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
 
     global NavBar := CreateModernNavBar(MainGui, tabs,
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"],
