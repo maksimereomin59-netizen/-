@@ -233,13 +233,11 @@ SendSlot(slot) {
                 KeyWait "Shift"
                 
                 BlockInput true
+                oldClip := A_Clipboard
                 try {
-                    oldClip := A_Clipboard
                     A_Clipboard := "" ; Чистим буфер
                     A_Clipboard := text
                     if !ClipWait(0.5) { ; Ждем пока текст попадет в буфер
-                        A_Clipboard := oldClip
-                        BlockInput false
                         continue
                     }
                     
@@ -254,9 +252,10 @@ SendSlot(slot) {
                     SendEvent "{Enter}"
                     Sleep(CFG["afterEnterDelay"])
                     
-                    A_Clipboard := oldClip ; Возвращаем старый буфер
-                    
                 } finally {
+                    ; ВАЖНО: возвращаем буфер пользователя В ЛЮБОМ СЛУЧАЕ,
+                    ; даже если отправка упала с ошибкой (иначе буфер оставался бы затертым)
+                    A_Clipboard := oldClip
                     BlockInput false
                 }
             }

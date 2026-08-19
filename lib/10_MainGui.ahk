@@ -64,10 +64,11 @@ BuildMainGui() {
     TitleBar.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, MainGui.Hwnd))
     
     ; === 3. ВКЛАДКИ ===
+    ; Нативный Tab3 используется только для группировки/скрытия контента,
+    ; его собственные заголовки мы прячем и рисуем современную панель навигации.
     tabs := MainGui.AddTab3("x10 y50 w940 h700 Background" THEME["bgLight"] " c" THEME["text"],
-        ["   Главная   ", "   Бинды   ", "   Настройки   ", "   Статистика   ", "   Справка   "])
-    MainGui.SetFont("s11 bold", "Segoe UI")
-    try SendMessage(0x1329, 0, 40, tabs.Hwnd)
+        ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
+    try SendMessage(0x1329, 0, 0, tabs.Hwnd)   ; TCM_SETITEMSIZE: высота заголовков = 0
 
     ; ==============================================================================
     ; 1. ГЛАВНАЯ (PERFECT GRID ALIGNMENT)
@@ -1154,6 +1155,59 @@ BuildMainGui() {
     MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], "")
     
     SwitchHelpTab("Overlay")
+
+    ; ==============================================================================
+    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (кнопки-пилюли)
+    ; Каждый пункт — скруглённая кнопка с фоном:
+    ;   активная   — залита акцентом, тёмный текст
+    ;   неактивная — тёмная подложка, при наведении подсвечивается
+    ; ==============================================================================
+    MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
+    MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
+
+    global NavItems := []
+    global NavActive := 1
+    navLabels := ["Главная", "Бинды", "Настройки", "Статистика", "Справка"]
+    navW := 112
+    navH := 28
+    navY := 56
+    navX := 20
+    for i, label in navLabels {
+        act := (i = NavActive)
+        ; Пилюля: один контрол с фоном + скругление (RoundCorners из патча)
+        btn := MainGui.AddText("x" navX " y" navY " w" navW " h" navH " Center 0x200 Background"
+            (act ? THEME["accent"] : THEME["bgHighlight"]) " c" (act ? THEME["bg"] : THEME["textDim"]), label)
+        btn.SetFont("s10 bold", "Segoe UI")
+        RoundCorners(btn, navW, navH, navH // 2)   ; полностью скруглённая пилюля
+        btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
+        HoverButtons.Push({
+            ctrl: btn, parent: MainGui, isClickable: true, id: i,
+            SetHover: (thisObj, state) => (
+                ; активную вкладку при наведении не трогаем
+                (thisObj.id != NavActive ? (
+                    ; прогрессия: bgHighlight (покой) -> bgSelected (ховер, светлее)
+                    btn.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
+                        " c" (state ? THEME["text"] : THEME["textDim"])),
+                    btn.Redraw()
+                ) : ""),
+                ; курсор-«рука» при наведении
+                DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
+            )
+        })
+        NavItems.Push(Map("btn", btn, "id", i))
+        navX += navW + 12
+    }
+
+    NavSelect(idx) {
+        tabs.Choose(idx)
+        NavActive := idx
+        for item in NavItems {
+            act := (item["id"] = idx)
+            item["btn"].Opt("Background" (act ? THEME["accent"] : THEME["bgHighlight"])
+                " c" (act ? THEME["bg"] : THEME["textDim"]))
+            item["btn"].Redraw()
+        }
+    }
 }
 
 ClearSearch(*) {

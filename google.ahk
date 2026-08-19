@@ -7,6 +7,7 @@
 #SingleInstance Force
 SendMode "Input"
 SetTitleMatchMode 2
+SetWorkingDir A_ScriptDir  ; все относительные пути — от папки скрипта
 
 try {
     DllCall("uxtheme\SetPreferredAppMode", "Int", 2) 
@@ -148,6 +149,8 @@ OnMessage(0x200, WM_MOUSEMOVE)
 #HotIf
 
 
+
+Log("══════════ Doctor Binder v" VERSION " запущен ══════════", "INFO")
 
 LoadConfig()
 BuildMainGui()
