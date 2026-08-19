@@ -172,9 +172,9 @@ class ModernButton {
         this._animDir := 0
         this._radius := (style = "close" || style = "clear" || style = "nav") ? h // 2 : Min(Round(h * 0.34), 14)
         ; Фон (скруглённый, с альфой) + текстовая подпись поверх
-        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 0x04000000 BackgroundTrans", "")
+        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
         this._bgCtrl := this._bg
-        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 0x04000000 BackgroundTrans c" this.colors.text, text)
+        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
         this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
         this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
@@ -421,7 +421,7 @@ class ModernButton {
         }
     }
 
-    OnClick() {
+    OnClick(*) {
         if !this.isClickable
             return
         ; Эффект нажатия: лёгкое вдавливание
@@ -515,7 +515,7 @@ class ModernNavBar {
         this.Select(1, true)
     }
 
-    Select(idx, force := false) {
+    Select(idx, force := false, *) {
         global THEME
         if !force && this.active = idx
             return
