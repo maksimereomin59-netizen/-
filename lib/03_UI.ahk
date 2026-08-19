@@ -182,6 +182,7 @@ class ModernButton {
         ; Крестики (close/clear): БЕЗ Picture-фона — только текст-кнопка.
         ; Прозрачный битмап давал чёрный прямоугольник; текст с ховером
         ; (краснеет) выглядит чисто и современно.
+        StartHoverPolling()
         this._isGhost := (style = "close" || style = "clear")
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
@@ -194,9 +195,12 @@ class ModernButton {
             HoverButtons.Push(this)
             return
         }
-        ; Фон (скруглённый, с альфой) + текстовая подпись поверх
+        ; Фон (скруглённый, с альфой) + текстовая подпись поверх.
+        ; ВАЖНО: сам контрол Picture обрезаем по скруглению (SetWindowRgn),
+        ; иначе по краям битмапа виден прямоугольник/чёрные углы
         this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
         this._scale := GetScale(this._bg.Hwnd)
+        try RoundCorners(this._bg, Round(w * this._scale), Round(h * this._scale), Round(this._radius * this._scale))
         this._bgCtrl := this._bg
         this.ctrl._bgCtrl := this._bg   ; для групповых переключений видимости
         ; Клик по фону кнопки (не только по тексту) тоже срабатывает
@@ -522,6 +526,8 @@ ModernPanel(parent, x, y, w, h, fill := "", accent := "", radius := 14, border :
         return ""
     pic := parent.AddPicture("x" x " y" y " w" w " h" h " BackgroundTrans", "HBITMAP:*" hbm)
     DllCall("DeleteObject", "Ptr", hbm)
+    ; Обрезаем контрол по скруглению — убирает чёрные/прямоугольные углы
+    try RoundCorners(pic, Round(w * s), Round(h * s), Round(radius * s))
     return pic
 }
 
@@ -563,8 +569,10 @@ class ModernNavBar {
             return
         ; Батчим перерисовку: переключение вкладки и подсветка пилюль
         ; происходят в одном кадре — без мерцания и «скачков».
+        ; WM_SETREDRAW (0x000B) на окне — надёжнее, чем Gui.Opt("-Redraw"),
+        ; которая в AHK v2 для окна может не работать.
         ; try/finally гарантирует, что перерисовка ВСЕГДА включится обратно
-        try this.gui.Opt("-Redraw")
+        SendMessage(0x000B, 0, 0, this.gui.Hwnd)
         try {
             ; switchFn не должен ронять поток при ошибке
             try this.switchFn.Call(idx)
@@ -575,7 +583,10 @@ class ModernNavBar {
                 item.btn.SetActive(act)
             }
         } finally {
-            try this.gui.Opt("+Redraw")
+            SendMessage(0x000B, 1, 0, this.gui.Hwnd)
+            ; Принудительная перерисовка окна и всех дочерних контролов
+            ; (RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW)
+            try DllCall("user32\RedrawWindow", "Ptr", this.gui.Hwnd, "Ptr", 0, "Ptr", 0, "UInt", 0x0001|0x0080|0x0100)
         }
         this.active := idx
     }
@@ -665,9 +676,21 @@ CreateClearBtn(parent, x, y, size, callback) {
 }
 
 ; ═══════════════════════════════════════════════════════════════════════
-; ХОВЕР-СИСТЕМА (глобальный OnMessage(0x200))
+; ХОВЕР-СИСТЕМА (поллинг позиции мыши)
 ; ═══════════════════════════════════════════════════════════════════════
-WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
+; Почему не OnMessage(0x200): WM_MOUSEMOVE приходит в контрол-окно под
+; курсором (Text/Picture), а не в родителя — глобальный хук на родителе
+; не ловит движение над кнопками. Поллинг каждые 30мс надёжен и прост.
+StartHoverPolling() {
+    global HoverButtons
+    static running := false
+    if running
+        return
+    running := true
+    SetTimer(HoverPollTick, 30)
+}
+
+HoverPollTick() {
     global HoverButtons
     static lastHwnd := 0
     try {
@@ -693,6 +716,11 @@ WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
         }
         lastHwnd := 0
     }
+}
+
+; Для обратной совместимости — функция остаётся, но не используется
+WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
+    HoverPollTick()
 }
 
 CleanupHoverButtons(gui) {

@@ -1094,28 +1094,21 @@ BuildMainGui() {
     ; (Настройки/Статистика/Справка) дополнительно восстанавливает выбранный
     ; раздел — ровно как это делал нативный Tab3.
     SwitchTab(n) {
-        global TabPages, CurrentSettingTab, CurrentStatTab, CurrentHelpTab
+        global TabPages
         if !IsObject(TabPages) || !TabPages.Has(n)
             return
-        ; Батчим перерисовку: показ/скрытие страниц одним махом —
-        ; без мигания и «рванья» текста при переключении
-        try MainGui.Opt("-Redraw")
+        ; Простое переключение видимости страниц. Батчинг перерисовки
+        ; делает вызывающий (ModernNavBar.Select через WM_SETREDRAW).
+        ; ВАЖНО: НЕ вызываем SwitchSettingTab/SwitchStatTab/SwitchHelpTab —
+        ; их состояние уже корректно (они вызываются при построении окна
+        ; и при кликах в боковом меню), повторный вызов заново скрывает/
+        ; показывает группы и даёт «прыжок текста» на долю секунды.
         for i, ctrls in TabPages {
             vis := (i = n)
             for c in ctrls {
                 try c.Visible := vis
             }
         }
-        ; Восстанавливаем выбранный раздел бокового меню (без мигания групп:
-        ; у страницы 3/4/5 группы уже в правильном состоянии, вызываем только
-        ; если нужно — но безопаснее просто переключить)
-        if n = 3
-            SwitchSettingTab(CurrentSettingTab)
-        else if n = 4
-            SwitchStatTab(CurrentStatTab)
-        else if n = 5
-            SwitchHelpTab(CurrentHelpTab)
-        try MainGui.Opt("+Redraw")
     }
 
     ; Собираем страницы ПЕРЕД созданием навигации: конструктор NavBar
