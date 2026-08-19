@@ -12,29 +12,29 @@ global APP_NAME := Constants.APP_NAME  ; <--- Этой строки не хва�
 global AUTHOR := Constants.AUTHOR      ; <--- И этой тоже
 
 global THEME := Map(
-    "bg",           "1d1d2c",
-    "bgLight",      "24243a",
-    "bgHighlight",  "3b3b58",
-    "bgSelected",   "52527e",
+    "bg",           "181825",
+    "bgLight",      "1e1e2e",
+    "bgHighlight",  "313244",
+    "bgSelected",   "45475a",
     "accent",       "89b4fa",
-    "accentDark",   "63688a",
+    "accentDark",   "585b70",
     "accentLight",  "b4befe",
     "accentGlow",   "89b4fa",
     "success",      "a6e3a1",
-    "successDark",  "6aa873",
+    "successDark",  "588c5e",
     "warning",      "f9e2af",
-    "warningDark",  "e8a23a",
+    "warningDark",  "df8e1d",
     "error",        "f38ba8",
-    "errorDark",    "f0576a",
-    "text",         "e6e9f8",
-    "textDim",      "bbc2de",
-    "textMuted",    "8b91ad",
-    "border",       "3f3f62",
-    "borderLight",  "565680",
+    "errorDark",    "e64553",
+    "text",         "cdd6f4",
+    "textDim",      "a6adc8",
+    "textMuted",    "6c7086",
+    "border",       "313244",
+    "borderLight",  "45475a",
     "borderGlow",   "89b4fa",
-    "bgHover",      "4b4d70",
-    "btnBg",        "3c3c5e",
-    "btnBgHover",   "4e4e72"
+    "bgHover",      "3b3d4f",
+    "btnBg",        "313244",
+    "btnBgHover",   "45475a"
 )
 
 global CFG := Map(
@@ -99,8 +99,6 @@ global CurrentEditSlot := 0, EditorLineCount := 12, EditorScrollPos := 1, Editor
 global MaxUndoSteps := Constants.MAX_UNDO_STEPS, EDITOR_VISIBLE_LINES := Constants.EDITOR_VISIBLE_LINES
 
 global BtnConfirmDelay := "", EditorInputHook := "", EditorBlinkState := false
-global TabPages := Map()   ; страницы вкладок (заполняется BuildTabPages)
-global g_BtnFmtAt := "", g_BtnFmtQuote := "", g_BtnFmtPlain := ""
 global WheelGui := "", BindSelectorGui := "", FilterPopupGui := "", btnFilterDisplay := "", RuleEditorGui := ""
 global MentionNotifyGui := "", SmsNotifyGui := "", LastSmsNotification := ""
 global ChatLogPath := A_MyDocuments "\GTA San Andreas User Files\SAMP\chatlog.txt", LastLogPos := 0

@@ -257,7 +257,6 @@ ShowBindSelector(cfgKey, btnName) {
     
     BindSelectorGui.Show("x" mx " y" my " w250 h315 NA")
     
-    
     ; Убираем гориз. скролл
     try DllCall("ShowScrollBar", "Ptr", lvSel.Hwnd, "Int", 0, "Int", 0)
 }

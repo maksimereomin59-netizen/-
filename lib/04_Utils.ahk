@@ -46,21 +46,17 @@ SaveUndoState(action := "action") {
 
 Undo(*) {
     global UndoHistory, SLOTS
-    try {
-        if UndoHistory.Length = 0 {
-            ShowNotify("Нет действий для отмены", "warning")
-            return
-        }
-        state := UndoHistory.Pop()
-        Loop Constants.MAX_SLOTS
-            SLOTS[A_Index] := state["slots"][A_Index]
-        try RefreshBindList()
-        try UpdateOverlayData()
-        try RegisterAllHotkeys()
-        ShowNotify("↩ Отменено: " state["action"], "success")
-    } catch {
-        ShowNotify("Не удалось отменить действие", "error")
+    if UndoHistory.Length = 0 {
+        ShowNotify("Нет действий для отмены", "warning")
+        return
     }
+    state := UndoHistory.Pop()
+    Loop Constants.MAX_SLOTS
+        SLOTS[A_Index] := state["slots"][A_Index]
+    RefreshBindList()
+    UpdateOverlayData()
+    RegisterAllHotkeys()
+    ShowNotify("↩ Отменено: " state["action"], "success")
 }
 
 GetCurrentModifiers() {
@@ -122,14 +118,8 @@ UpdateButtonState(btnObj, isActive, style := "success") {
     btnObj.lastState := isActive
     ; =========================
     
-    ; Новый движок: ModernButton
-    if btnObj.HasOwnProp("SetEnabledState") {
-        btnObj.SetEnabledState(isActive, style)
-        return
-    }
-    
-    ; Fallback (старый стиль)
     btnObj.isClickable := isActive
+    
     try {
         if isActive {
             colors := btnObj.GetColors(style)
