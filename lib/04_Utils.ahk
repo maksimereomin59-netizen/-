@@ -118,8 +118,14 @@ UpdateButtonState(btnObj, isActive, style := "success") {
     btnObj.lastState := isActive
     ; =========================
     
-    btnObj.isClickable := isActive
+    ; Новый движок: ModernButton
+    if btnObj.HasOwnProp("SetEnabledState") {
+        btnObj.SetEnabledState(isActive, style)
+        return
+    }
     
+    ; Fallback (старый стиль)
+    btnObj.isClickable := isActive
     try {
         if isActive {
             colors := btnObj.GetColors(style)

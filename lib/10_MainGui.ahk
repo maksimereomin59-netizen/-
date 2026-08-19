@@ -28,6 +28,7 @@ BuildMainGui() {
     MainGui := Gui("-Caption +Border", APP_NAME " v" VERSION)
     MainGui.BackColor := THEME["bg"]
     MainGui.SetFont("s10 c" THEME["text"], "Segoe UI")
+    MainGui.OnEvent("Close", (*) => CloseMainGui())
     
     ; Фикс скролла
     try {
@@ -48,19 +49,7 @@ BuildMainGui() {
     MainGui.AddText("x610 y13 w300 Right c" THEME["success"] " BackgroundTrans vAutoSaveStatus",
         (CFG["autoSave"] ? "💾 Автосохранение: вкл" : "💾 Автосохранение: выкл"))
 
-    CloseBtn := MainGui.AddText("x920 y0 w40 h40 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
-    CloseBtn.OnEvent("Click", (*) => MainGui.Hide())
-    
-    HoverButtons.Push({
-        ctrl: CloseBtn,
-        parent: MainGui,
-        isClickable: true,
-        colors: {bg: THEME["bgLight"], hover: THEME["error"]}, 
-        SetHover: (thisObj, state) => (
-            CloseBtn.Opt("Background" (state ? THEME["error"] : THEME["bgLight"]) " c" (state ? "White" : THEME["textDim"])),
-            CloseBtn.Redraw()
-        )
-    })
+    CloseBtn := CreateStyledButton(MainGui, 920, 0, 40, 40, "✕", (*) => CloseMainGui(), "close")
     TitleBar.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, MainGui.Hwnd))
     
     ; === 3. ВКЛАДКИ ===
@@ -78,8 +67,7 @@ BuildMainGui() {
     yHead := 90 
     
     ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["error"], "")
+    ModernPanel(MainGui, 20, yHead, 920, 100, THEME["bgLight"], THEME["error"], 14)
     MainGui.SetFont("s48", "Segoe UI Symbol")
     MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["error"] " BackgroundTrans", "✚")
     MainGui.SetFont("s36", "Impact") 
@@ -105,8 +93,7 @@ BuildMainGui() {
     ; ======================= ЛЕВАЯ КОЛОНКА (ОДНА БОЛЬШАЯ КАРТОЧКА) =======================
     
     ; Карточка: Личное дело
-    MainGui.AddText("x" xLeft " y" yStart " w" colW " h420 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xLeft " y" yStart " w4 h420 Background" THEME["accentLight"], "") 
+    ModernPanel(MainGui, xLeft, yStart, colW, 420, THEME["bgLight"], THEME["accentLight"], 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xLeft+20) " y" (yStart+15) " w" (colW-40) " c" THEME["accentLight"], "👤 ЛИЧНОЕ ДЕЛО")
@@ -152,8 +139,7 @@ BuildMainGui() {
     y := yStart
     
     ; --- КАРТОЧКА 1: ПАЦИЕНТ (Высота 160) ---
-    MainGui.AddText("x" xRight " y" y " w" colW " h160 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" y " w4 h160 Background" THEME["success"], "") 
+    ModernPanel(MainGui, xRight, y, colW, 160, THEME["bgLight"], THEME["success"], 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["success"], "👥 ТЕКУЩИЙ ПАЦИЕНТ")
@@ -181,8 +167,7 @@ BuildMainGui() {
     
     ; --- КАРТОЧКА 2: УПРАВЛЕНИЕ (Высота 240) ---
     y += 180
-    MainGui.AddText("x" xRight " y" y " w" colW " h240 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" y " w4 h240 Background" THEME["warning"], "") 
+    ModernPanel(MainGui, xRight, y, colW, 240, THEME["bgLight"], THEME["warning"], 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["warning"], "⚡ БЫСТРОЕ УПРАВЛЕНИЕ")
@@ -227,8 +212,7 @@ BuildMainGui() {
     yHead := 90 
     
     ; --- ШАПКА (ЕДИНЫЙ СТИЛЬ) ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["accent"], "") ; Синяя полоса для биндов
+    ModernPanel(MainGui, 20, yHead, 920, 100, THEME["bgLight"], THEME["accent"], 14) ; Синяя полоса для биндов
     MainGui.SetFont("s48", "Segoe UI Symbol")
     MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["accent"] " BackgroundTrans", "📋")
     MainGui.SetFont("s36", "Impact") 
@@ -249,8 +233,7 @@ BuildMainGui() {
     wList := 660
     
     ; Карточка списка
-    MainGui.AddText("x20 y" yStart " w" wList " h500 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yStart " w4 h500 Background" THEME["accent"], "")
+    ModernPanel(MainGui, 20, yStart, wList, 500, THEME["bgLight"], THEME["accent"], 14)
     
     ; --- ПАНЕЛЬ ИНСТРУМЕНТОВ (TOOLBAR) ---
     yTool := yStart + 15
@@ -346,8 +329,7 @@ BuildMainGui() {
     wRight := 240
     
     ; Карточка действий
-    MainGui.AddText("x" xRight " y" yStart " w" wRight " h500 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" yStart " w4 h500 Background" THEME["warning"], "") ; Желтая полоса
+    ModernPanel(MainGui, xRight, yStart, wRight, 500, THEME["bgLight"], THEME["warning"], 14) ; Желтая полоса
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"], "⚡ ДЕЙСТВИЯ")
@@ -391,8 +373,7 @@ BuildMainGui() {
     yHead := 90
     
     ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["warning"], "") 
+    ModernPanel(MainGui, 20, yHead, 920, 100, THEME["bgLight"], THEME["warning"], 14) 
     MainGui.SetFont("s48", "Segoe UI Symbol")
     MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["warning"] " BackgroundTrans", "⚙️")
     MainGui.SetFont("s36", "Impact") 
@@ -409,7 +390,7 @@ BuildMainGui() {
     hMenu := 440 ; Высота меню и контента
     
     ; Фон под меню
-    MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    ModernPanel(MainGui, xMenu, yStart, wMenu, hMenu, THEME["bgLight"], "", 14)
     
     SettingGroups := Map()
     SettingGroups["General"] := []
@@ -421,29 +402,9 @@ BuildMainGui() {
     
     ; Функция создания кнопки меню
     CreateSideBtn(yPos, text, id) {
-        ; 1. СНАЧАЛА УСТАНАВЛИВАЕМ ШРИФТ
-        MainGui.SetFont("s10 bold", "Segoe UI")
-        
-        ; 2. ПОТОМ СОЗДАЕМ КНОПКУ
-        btn := MainGui.AddText("x" xMenu " y" yPos " w" wMenu " h50 Center 0x200 Background" THEME["bgLight"], text)
-        
-        ; Событие
-        btn.OnEvent("Click", (*) => SwitchSettingTab(id))
-        
-        ; Hover
-        HoverButtons.Push({
-            ctrl: btn,
-            parent: MainGui,
-            isClickable: true,
-            id: id, 
-            colors: {bg: THEME["bgLight"], hover: THEME["bgHover"]}, 
-            SetHover: (thisObj, state) => (
-                (CurrentSettingTab != thisObj.id) ? btn.Opt("Background" (state ? THEME["bgHover"] : THEME["bgLight"])) : "",
-                btn.Redraw()
-            )
-        })
-        
-        return {ctrl: btn, id: id}
+        btn := CreateStyledButton(MainGui, xMenu + 8, yPos + 5, wMenu - 16, 40, text, (*) => SwitchSettingTab(id), "nav")
+        btn.ctrl.SetFont("s10 bold", "Segoe UI")
+        return {ctrl: btn.ctrl, id: id, btn: btn}
     }
     
     MenuBtns := []
@@ -461,15 +422,8 @@ BuildMainGui() {
         
         for btn in MenuBtns {
             isActive := (btn.id = tabName)
-            if isActive {
-                ; АКТИВНАЯ: Синий фон, Темный текст (Очень заметно)
-                btn.ctrl.Opt("Background" THEME["accent"] " c" THEME["bg"])
-                btn.ctrl.SetFont("s11 bold")
-            } else {
-                ; ОБЫЧНАЯ: Фон меню, Серый текст
-                btn.ctrl.Opt("Background" THEME["bgLight"] " c" THEME["textDim"])
-                btn.ctrl.SetFont("s10 norm")
-            }
+            btn.btn.SetActive(isActive)
+            btn.ctrl.SetFont(isActive ? "s11 bold" : "s10 norm")
             btn.ctrl.Redraw()
         }
         
@@ -482,6 +436,9 @@ BuildMainGui() {
         for ctrl in SettingGroups[tabName] {
             try ctrl.Visible := true
         }
+        
+        ; Плавный переход содержимого
+        try GuiContentFade(MainGui, xContent, yStart, wContent, hMenu, 80, 8, 12)
     }
     
     
@@ -490,12 +447,12 @@ BuildMainGui() {
     wContent := 640
     
     ; ФОНОВАЯ ПОДЛОЖКА ПОД КОНТЕНТ (ВИЗУАЛЬНЫЙ КОНТЕЙНЕР)
-    MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
-    ; Декоративная линия слева от контента
-    MainGui.AddText("x" xContent " y" yStart " w2 h" hMenu " Background" THEME["border"], "")
+    ModernPanel(MainGui, xContent, yStart, wContent, hMenu, THEME["bgLight"], "", 14, THEME["border"])
     
     AddToGroup(group, ctrl) {
         SettingGroups[group].Push(ctrl)
+        if IsObject(ctrl) && ctrl.HasOwnProp("_bgCtrl") && IsObject(ctrl._bgCtrl)
+            SettingGroups[group].Push(ctrl._bgCtrl)
         return ctrl
     }
     
@@ -515,6 +472,7 @@ BuildMainGui() {
     val := CFG["chatKey"]
     disp := val = "" ? "—" : FormatHotkey(val)
     hkChat := MainGui.AddText("x" (x+160) " y" y " w120 h26 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_ChatKey", disp)
+    RoundCorners(hkChat, 120, 26, 8)
     AddToGroup("General", hkChat)
     MainGui.AddEdit("x0 y0 w0 h0 Hidden vValue_ChatKey", val) 
     ; Делаем чуть меньше и квадратным (30x30)
@@ -528,17 +486,14 @@ BuildMainGui() {
     btnH := 35
     MainGui.SetFont("s9 bold", "Segoe UI")
     
-    b1 := MainGui.AddText("x" x " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_At", "@ID")
-    AddToGroup("General", b1)
-    b1.OnEvent("Click", (*) => SetIdFormatGUI("at"))
+    g_BtnFmtAt := CreateStyledButton(MainGui, x, y+20, btnW, btnH, "@ID", (*) => SetIdFormatGUI("at"), "segmented")
+    AddToGroup("General", g_BtnFmtAt.ctrl)
     
-    b2 := MainGui.AddText("x" (x+btnW+10) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Quote", "`"ID`"")
-    AddToGroup("General", b2)
-    b2.OnEvent("Click", (*) => SetIdFormatGUI("quote"))
+    g_BtnFmtQuote := CreateStyledButton(MainGui, x+btnW+10, y+20, btnW, btnH, "`"ID`"", (*) => SetIdFormatGUI("quote"), "segmented")
+    AddToGroup("General", g_BtnFmtQuote.ctrl)
     
-    b3 := MainGui.AddText("x" (x+btnW*2+20) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Plain", "ID")
-    AddToGroup("General", b3)
-    b3.OnEvent("Click", (*) => SetIdFormatGUI("plain"))
+    g_BtnFmtPlain := CreateStyledButton(MainGui, x+btnW*2+20, y+20, btnW, btnH, "ID", (*) => SetIdFormatGUI("plain"), "segmented")
+    AddToGroup("General", g_BtnFmtPlain.ctrl)
     
     y += 90
     MainGui.SetFont("s10 norm", "Segoe UI")
@@ -643,6 +598,7 @@ BuildMainGui() {
         
         ; Поле отображения клавиши
         hk := MainGui.AddText("x" (x+130) " y" yPos " w200 h28 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_" type, disp)
+        RoundCorners(hk, 200, 28, 8)
         AddToGroup("Hotkeys", hk)
         
         ; Скрытое поле для хранения значения
@@ -799,8 +755,7 @@ BuildMainGui() {
     yHead := 90
     
     ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["success"], "") 
+    ModernPanel(MainGui, 20, yHead, 920, 100, THEME["bgLight"], THEME["success"], 14) 
     MainGui.SetFont("s48", "Segoe UI Symbol")
     MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["success"] " BackgroundTrans", "📊")
     MainGui.SetFont("s36", "Impact") 
@@ -815,7 +770,7 @@ BuildMainGui() {
     wMenu := 240
     hMenu := 440
     
-    MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    ModernPanel(MainGui, xMenu, yStart, wMenu, hMenu, THEME["bgLight"], "", 14)
     
     StatGroups := Map()
     StatGroups["Dashboard"] := []
@@ -823,19 +778,9 @@ BuildMainGui() {
     
     ; Функция кнопки меню статистики
     CreateStatBtn(yPos, text, id) {
-        btn := MainGui.AddText("x" xMenu " y" yPos " w" wMenu " h50 Center 0x200 Background" THEME["bgLight"], text)
-        MainGui.SetFont("s10 bold", "Segoe UI")
-        btn.OnEvent("Click", (*) => SwitchStatTab(id))
-        
-        HoverButtons.Push({
-            ctrl: btn, parent: MainGui, isClickable: true, id: id,
-            colors: {bg: THEME["bgLight"], hover: THEME["bgHover"]}, 
-            SetHover: (thisObj, state) => (
-                (CurrentStatTab != thisObj.id) ? btn.Opt("Background" (state ? THEME["bgHover"] : THEME["bgLight"])) : "",
-                btn.Redraw()
-            )
-        })
-        return {ctrl: btn, id: id}
+        btn := CreateStyledButton(MainGui, xMenu + 8, yPos + 5, wMenu - 16, 40, text, (*) => SwitchStatTab(id), "nav")
+        btn.ctrl.SetFont("s10 bold", "Segoe UI")
+        return {ctrl: btn.ctrl, id: id, btn: btn}
     }
     
     StatBtns := []
@@ -848,13 +793,8 @@ BuildMainGui() {
         CurrentStatTab := tabName
         for btn in StatBtns {
             isActive := (btn.id = tabName)
-            if isActive {
-                btn.ctrl.Opt("Background" THEME["success"] " c" THEME["bg"])
-                btn.ctrl.SetFont("s11 bold")
-            } else {
-                btn.ctrl.Opt("Background" THEME["bgLight"] " c" THEME["textDim"])
-                btn.ctrl.SetFont("s10 norm")
-            }
+            btn.btn.SetActive(isActive)
+            btn.ctrl.SetFont(isActive ? "s11 bold" : "s10 norm")
             btn.ctrl.Redraw()
         }
         for name, ctrls in StatGroups {
@@ -865,13 +805,16 @@ BuildMainGui() {
         for ctrl in StatGroups[tabName] {
             try ctrl.Visible := true
         }
+        
+        ; Плавный переход содержимого
+        try GuiContentFade(MainGui, xContent, yStart, wContent, hMenu, 80, 8, 12)
     }
     
     ; --- ПРАВАЯ ОБЛАСТЬ ---
     xContent := xMenu + wMenu + 20
     wContent := 640
     
-    MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    ModernPanel(MainGui, xContent, yStart, wContent, hMenu, THEME["bgLight"], "", 14)
     
     AddToStatGroup(group, ctrl) {
         StatGroups[group].Push(ctrl)
@@ -883,8 +826,7 @@ BuildMainGui() {
     x := xContent + 20
     
     CreateDashCard(x, y, w, h, title, varName, value, color, icon) {
-        bg := MainGui.AddText("x" x " y" y " w" w " h" h " Background" THEME["bg"], "") ; Фон темнее (bg) на светлом (bgLight)
-        line := MainGui.AddText("x" x " y" y " w4 h" h " Background" color, "")
+        bg := ModernPanel(MainGui, x, y, w, h, THEME["bg"], color, 10) ; Фон темнее (bg) на светлом (bgLight)
         
         MainGui.SetFont("s42", "Segoe UI Symbol") 
         ico := MainGui.AddText("x" (x+w-60) " y" (y+10) " w60 h60 Right c" THEME["bgHighlight"] " BackgroundTrans", icon)
@@ -896,7 +838,6 @@ BuildMainGui() {
         val := MainGui.AddText("x" (x+12) " y" (y+30) " w" (w-20) " h50 c" THEME["text"] " BackgroundTrans v" varName, value)
         
         AddToStatGroup("Dashboard", bg)
-        AddToStatGroup("Dashboard", line)
         AddToStatGroup("Dashboard", ico)
         AddToStatGroup("Dashboard", tit)
         AddToStatGroup("Dashboard", val)
@@ -965,8 +906,7 @@ BuildMainGui() {
     yHead := 90
     
     ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["accentLight"], "") 
+    ModernPanel(MainGui, 20, yHead, 920, 100, THEME["bgLight"], THEME["accentLight"], 14) 
     MainGui.SetFont("s48", "Segoe UI Symbol")
     MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["accentLight"] " BackgroundTrans", "❓")
     MainGui.SetFont("s36", "Impact") 
@@ -982,7 +922,7 @@ BuildMainGui() {
     wMenu := 200 ; Чуть уже
     hMenu := 460
     
-    MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    ModernPanel(MainGui, xMenu, yStart, wMenu, hMenu, THEME["bgLight"], "", 14)
     
     HelpGroups := Map()
     HelpGroups["Overlay"] := []
@@ -990,19 +930,9 @@ BuildMainGui() {
     HelpGroups["About"] := []
     
     CreateHelpBtn(yPos, text, id) {
-        btn := MainGui.AddText("x" xMenu " y" yPos " w" wMenu " h50 Center 0x200 Background" THEME["bgLight"], text)
-        MainGui.SetFont("s10 bold", "Segoe UI")
-        btn.OnEvent("Click", (*) => SwitchHelpTab(id))
-        
-        HoverButtons.Push({
-            ctrl: btn, parent: MainGui, isClickable: true, id: id,
-            colors: {bg: THEME["bgLight"], hover: THEME["bgHover"]}, 
-            SetHover: (thisObj, state) => (
-                (CurrentHelpTab != thisObj.id) ? btn.Opt("Background" (state ? THEME["bgHover"] : THEME["bgLight"])) : "",
-                btn.Redraw()
-            )
-        })
-        return {ctrl: btn, id: id}
+        btn := CreateStyledButton(MainGui, xMenu + 8, yPos + 5, wMenu - 16, 40, text, (*) => SwitchHelpTab(id), "nav")
+        btn.ctrl.SetFont("s10 bold", "Segoe UI")
+        return {ctrl: btn.ctrl, id: id, btn: btn}
     }
     
     HelpBtns := []
@@ -1016,13 +946,8 @@ BuildMainGui() {
         CurrentHelpTab := tabName
         for btn in HelpBtns {
             isActive := (btn.id = tabName)
-            if isActive {
-                btn.ctrl.Opt("Background" THEME["accent"] " c" THEME["bg"])
-                btn.ctrl.SetFont("s11 bold")
-            } else {
-                btn.ctrl.Opt("Background" THEME["bgLight"] " c" THEME["textDim"])
-                btn.ctrl.SetFont("s10 norm")
-            }
+            btn.btn.SetActive(isActive)
+            btn.ctrl.SetFont(isActive ? "s11 bold" : "s10 norm")
             btn.ctrl.Redraw()
         }
         for name, ctrls in HelpGroups {
@@ -1033,13 +958,16 @@ BuildMainGui() {
         for ctrl in HelpGroups[tabName] {
             try ctrl.Visible := true
         }
+        
+        ; Плавный переход содержимого
+        try GuiContentFade(MainGui, xCenter, yStart, wCenter, hMenu, 80, 8, 12)
     }
     
     ; --- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ (МЕНЯЮЩИЙСЯ КОНТЕНТ) ---
     xCenter := xMenu + wMenu + 20
     wCenter := 440 ; Место под контент
     
-    MainGui.AddText("x" xCenter " y" yStart " w" wCenter " h" hMenu " Background" THEME["bgLight"], "")
+    ModernPanel(MainGui, xCenter, yStart, wCenter, hMenu, THEME["bgLight"], "", 14)
     
     AddToHelp(group, ctrl) {
         HelpGroups[group].Push(ctrl)
@@ -1116,8 +1044,7 @@ BuildMainGui() {
     y := yStart
     
     ; Фон правой панели
-    MainGui.AddText("x" xRight " y" y " w" wRight " h" hMenu " Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" y " w4 h" hMenu " Background" THEME["accent"], "")
+    ModernPanel(MainGui, xRight, y, wRight, hMenu, THEME["bgLight"], THEME["accent"], 14)
     
     y += 20
     xIn := xRight + 20
@@ -1157,42 +1084,23 @@ BuildMainGui() {
     SwitchHelpTab("Overlay")
 
     ; ==============================================================================
-    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (поверх нативных вкладок)
+    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ
+    ; (анимированный индикатор-пилюля, hover-эффекты, fade-переход содержимого)
     ; ==============================================================================
+    tabs.UseTab(0)   ; навигация не привязана ни к одной вкладке — видна всегда
     MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
     MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
 
-    global NavItems := []
-    global NavActive := 1
-    navLabels := ["Главная", "Бинды", "Настройки", "Статистика", "Справка"]
-    navX := 20
-    for i, label in navLabels {
-        underline := MainGui.AddText("x" navX " y85 w110 h3 Background" (i = NavActive ? THEME["accent"] : THEME["bgLight"]), "")
-        btn := MainGui.AddText("x" navX " y56 w110 h28 Center c" (i = NavActive ? THEME["accent"] : THEME["textDim"]) " BackgroundTrans", label)
-        btn.SetFont("s10 bold", "Segoe UI")
-        btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
-        HoverButtons.Push({
-            ctrl: btn, parent: MainGui, isClickable: true, id: i,
-            SetHover: (thisObj, state) => (
-                (thisObj.id != NavActive ? btn.Opt("c" (state ? THEME["text"] : THEME["textDim"])) : ""),
-                btn.Redraw()
-            )
-        })
-        NavItems.Push(Map("btn", btn, "bar", underline))
-        navX += 120
-    }
+    global NavBar := CreateModernNavBar(MainGui, tabs,
+        ["Главная", "Бинды", "Настройки", "Статистика", "Справка"],
+        20, 55, 920, 28, [0, 90, 960, 660])
+}
 
-    NavSelect(idx) {
-        tabs.Choose(idx)
-        NavActive := idx
-        for i, item in NavItems {
-            act := (i = idx)
-            item["btn"].Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
-            item["bar"].Opt("Background" (act ? THEME["accent"] : THEME["bgLight"]))
-            item["btn"].Redraw()
-            item["bar"].Redraw()
-        }
-    }
+; Плавное закрытие главного окна
+CloseMainGui() {
+    global MainGui
+    if MainGui
+        FadeOutGui(MainGui, "hide")
 }
 
 ClearSearch(*) {
@@ -1403,31 +1311,21 @@ ToggleSidebarButtons(isEnabled) {
         if !(InStr(text, "Изменить") || InStr(text, "Копировать") || InStr(text, "Задать") || InStr(text, "УДАЛИТЬ"))
             continue
         
-        btn.isClickable := isEnabled
-        
         try {
             if isEnabled {
                 ; ВКЛЮЧЕНО: Возвращаем красивые цвета
                 style := "default"
                 
-                if InStr(text, "Изменить")
+                if InStr(text, "Изменить") || InStr(text, "Копировать") || InStr(text, "Задать")
                     style := "info"      ; Синий
-                else if InStr(text, "Копировать")
-                    style := "info"      ; Синий
-                else if InStr(text, "Задать")
-                    style := "info"   ; Желтый (Охра)
                 else if InStr(text, "УДАЛИТЬ")
                     style := "danger"    ; Красный
                 
-                colors := btn.GetColors(style)
-                btn.colors := colors
-                btn.ctrl.Opt("Background" colors.bg " c" colors.text)
-                
+                btn.SetEnabledState(true, style)
             } else {
                 ; ВЫКЛЮЧЕНО: Темно-серый
-                btn.ctrl.Opt("Background20202b c454555")
+                btn.SetEnabledState(false)
             }
-            btn.ctrl.Redraw()
         }
     }
 }
@@ -1502,6 +1400,7 @@ ShowMainGui() {
     RefreshBindList()
 
     MainGui.Show("w960 h760")
+    MakeWindowRounded(MainGui, 12)
     FadeInGui(MainGui)   ; плавное появление окна
     
     try {

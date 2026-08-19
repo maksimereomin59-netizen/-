@@ -278,6 +278,7 @@ CaptureHotkeyVisual(slotIdx) {
     captureGui.AddText("x30 y50 w440", "Примеры: F1, Ctrl+1, Alt+F5, Numpad3")
     captureGui.SetFont("s16 bold", "Consolas")
     display := captureGui.AddText("x30 y90 w440 h50 Center Border Background" THEME["bgHighlight"] " c" THEME["warning"], "⏳ Ожидание...")
+    RoundCorners(display, 440, 50, 10)
     statusText := captureGui.AddText("x30 y150 w440 Center c" THEME["textMuted"], "")
     ih := InputHook("L0 T30")
     ih.KeyOpt("{All}", "N")
@@ -288,6 +289,7 @@ CaptureHotkeyVisual(slotIdx) {
     CreateStyledButton(captureGui, 330, 180, 140, 40, "✅ OK", (*) => (ih.Stop(), ApplyCapturedKeyToSlot(CapturedEditorKey, slotIdx, captureGui)), "success")
     captureGui.OnEvent("Close", (*) => (ih.Stop(), captureGui.Destroy()))
     captureGui.Show("w500 h240")
+    MakeWindowRounded(captureGui, 12)
     ih.Start()
 }
 
@@ -545,6 +547,7 @@ ShowConflictDialog(key, conflictName, slotIdx, parentGui) {
     conflictGui.Show("w500 h335")
     conflictGui.GetPos(&gx, &gy, &gw, &gh)
     conflictGui.Move((A_ScreenWidth - gw) / 2, (A_ScreenHeight - gh) / 2)
+    MakeWindowRounded(conflictGui, 12)
 }
 
 ConfirmReplace(key, slotIdx, parentGui, conflictGui) {
@@ -597,6 +600,7 @@ ShowEditorConflictDialog(key, conflictName) {
     conflictGui.Show("w500 h330")
     conflictGui.GetPos(&gx, &gy, &gw, &gh)
     conflictGui.Move((A_ScreenWidth - gw) / 2, (A_ScreenHeight - gh) / 2)
+    MakeWindowRounded(conflictGui, 12)
 }
 
 ConfirmEditorReplace(key, conflictGui) {

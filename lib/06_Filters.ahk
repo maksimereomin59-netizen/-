@@ -163,8 +163,8 @@ ShowFilterMenu(*) {
     y += 14
     
     ; ✅ Используем класс StyledBtn вместо несуществующей функции
-    StyledBtn(FilterMenuGui, 16, y, 100, 36, "➕ Создать", (*) => (FilterMenuGui.Destroy(), CreateNewFilter()), "success")
-    StyledBtn(FilterMenuGui, 124, y, 100, 36, "✏️ Изменить", (*) => (FilterMenuGui.Destroy(), EditFilters()), "default")
+    CreateStyledButton(FilterMenuGui, 16, y, 100, 36, "➕ Создать", (*) => (FilterMenuGui.Destroy(), CreateNewFilter()), "success")
+    CreateStyledButton(FilterMenuGui, 124, y, 100, 36, "✏️ Изменить", (*) => (FilterMenuGui.Destroy(), EditFilters()), "default")
     y += 48
     
     SetTimer((*) => FilterMenuCheckHover(filterItems), 50)
@@ -177,6 +177,7 @@ ShowFilterMenu(*) {
     } catch {
         FilterMenuGui.Show("w" w " h" y)
     }
+    MakeWindowRounded(FilterMenuGui, 10)
 }
 
 ApplyFilterFromMenu(filterName) {
@@ -210,6 +211,7 @@ CreateNewFilter() {
     CreateStyledButton(filterGui, 140, 130, 110, 36, "Отмена", (*) => filterGui.Destroy(), "default")
     
     filterGui.Show("w360 h185")
+    MakeWindowRounded(filterGui, 12)
 }
 
 SaveNewFilter(gui) {
@@ -256,6 +258,7 @@ EditFilters() {
     CreateStyledButton(FilterEditorGui, 260, 370, 110, 36, "Закрыть", (*) => FilterEditorGui.Destroy(), "default")
     
     FilterEditorGui.Show("w500 h425")
+    MakeWindowRounded(FilterEditorGui, 12)
 }
 
 DeleteSelectedFilter() {
@@ -321,19 +324,22 @@ ShowModernFilterMenu(*) {
     hItem := 28 ; Высота меньше (было 35)
     y := 0
     
-    ; Рамка (окантовка)
-    FilterPopupGui.AddText("x0 y0 w" w " h" (hItem * filters.Length + 2) " Background" THEME["border"], "")
+    ; Рамка (окантовка) — скруглённая
+    ModernPanel(FilterPopupGui, 0, 0, w, hItem * filters.Length + 2, THEME["bg"], "", 10, THEME["border"])
     
     for filterName in filters {
-        btn := CreateStyledButton(FilterPopupGui, 1, y+1, w-2, hItem-1, "  " filterName, ((fn) => (*) => ApplyModernFilter(fn))(filterName), "default")
+        btn := CreateStyledButton(FilterPopupGui, 2, y+2, w-4, hItem-2, "  " filterName, ((fn) => (*) => ApplyModernFilter(fn))(filterName), "default")
         
-        btn.colors.bg := THEME["bgLight"] ; Чуть светлее фона
-        btn.ctrl.Opt("Background" THEME["bgLight"])
+        colors := btn.GetColors("default")
+        colors.bg := THEME["bgLight"] ; Чуть светлее фона
+        colors.hover := THEME["bgHover"]
+        btn.SetColorScheme(colors)
         
         y += hItem
     }
     
     FilterPopupGui.Show("x" menuX " y" menuY " w" w " h" (y+2) " NA")
+    MakeWindowRounded(FilterPopupGui, 10)
 }
 
 ApplyModernFilter(name) {

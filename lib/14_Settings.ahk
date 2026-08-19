@@ -11,8 +11,7 @@ ApplyAndSaveSettings(*) {
     ; === 1. ВИЗУАЛЬНЫЙ ЭФФЕКТ (МГНОВЕННЫЙ ОТКЛИК) ===
     if g_BtnSaveSettings {
         g_BtnSaveSettings.ctrl.Text := "⏳ Сохранение..."
-        g_BtnSaveSettings.ctrl.Opt("Background" THEME["warning"]) ; Желтый цвет
-        g_BtnSaveSettings.ctrl.Redraw()
+        g_BtnSaveSettings.SetEnabledState(true, "warning") ; Желтый цвет
         Sleep(50) ; Даем Windows время перерисовать кнопку перед нагрузкой
     }
     ; Чтение настроек колеса (извлекаем ID из строки "[ID] Название")
@@ -76,8 +75,7 @@ RestoreSettingsBtnText() {
     global g_BtnSaveSettings, THEME
     if g_BtnSaveSettings {
         g_BtnSaveSettings.ctrl.Text := "💾 Сохранить изменения"
-        g_BtnSaveSettings.ctrl.Opt("Background" THEME["btnBg"])
-        g_BtnSaveSettings.ctrl.Redraw()
+        g_BtnSaveSettings.SetEnabledState(true, "success")
     }
 }
 
@@ -548,25 +546,17 @@ SetDelayPreset(mode) {
 ; ЛОГИКА СЕГМЕНТИРОВАННЫХ КНОПОК (ВЫБОР ФОРМАТА ID)
 ; ═══════════════════════════════════════════════════════════════════════════════
 SetIdFormatGUI(fmt) {
-    global MainGui, THEME, CurrentIdFormat
+    global CurrentIdFormat, g_BtnFmtAt, g_BtnFmtQuote, g_BtnFmtPlain
     
     CurrentIdFormat := fmt
     
-    ; Сбрасываем все кнопки в серый
-    ResetBtn := (ctrlName) => (
-        MainGui[ctrlName].Opt("Background" THEME["bgHighlight"] " c" THEME["textDim"]),
-        MainGui[ctrlName].Redraw()
-    )
-    
-    ResetBtn("BtnFmt_At")
-    ResetBtn("BtnFmt_Quote")
-    ResetBtn("BtnFmt_Plain")
-    
-    ; Красим выбранную в акцентный цвет
-    activeBtn := (fmt = "at") ? "BtnFmt_At" : (fmt = "quote") ? "BtnFmt_Quote" : "BtnFmt_Plain"
-    
-    MainGui[activeBtn].Opt("Background" THEME["accent"] " c" THEME["bg"]) ; Текст темный на ярком фоне
-    MainGui[activeBtn].Redraw()
+    ; Современные сегмент-кнопки: активная подсвечена акцентом
+    if IsObject(g_BtnFmtAt)
+        g_BtnFmtAt.SetActive(fmt = "at")
+    if IsObject(g_BtnFmtQuote)
+        g_BtnFmtQuote.SetActive(fmt = "quote")
+    if IsObject(g_BtnFmtPlain)
+        g_BtnFmtPlain.SetActive(fmt = "plain")
     
     CheckSettingsDirty()
 }
@@ -688,10 +678,8 @@ DeleteScreenRule() {
     MarkUnsaved()
     try {
         if g_BtnSaveSettings {
-            g_BtnSaveSettings.isClickable := true
             g_BtnSaveSettings.ctrl.Text := "💾 Сохранить изменения (!)"
-            g_BtnSaveSettings.ctrl.Opt("Background" THEME["btnPrimary"] " cffffff")
-            g_BtnSaveSettings.ctrl.Redraw()
+            g_BtnSaveSettings.SetEnabledState(true, "success")
         }
     }
     
@@ -726,10 +714,8 @@ SaveRuleFromGui(gui, editIndex) {
     MarkUnsaved()
     try {
         if g_BtnSaveSettings {
-            g_BtnSaveSettings.isClickable := true
             g_BtnSaveSettings.ctrl.Text := "💾 Сохранить изменения (!)"
-            g_BtnSaveSettings.ctrl.Opt("Background" THEME["btnPrimary"] " cffffff")
-            g_BtnSaveSettings.ctrl.Redraw()
+            g_BtnSaveSettings.SetEnabledState(true, "success")
         }
     }
     
@@ -770,10 +756,9 @@ ShowRuleEditor(editIndex := 0) {
     RuleEditorGui.SetFont("s11 bold", "Segoe UI")
     RuleEditorGui.AddText("x20 y10 w300 c" THEME["accent"] " BackgroundTrans", "📷 " titleText)
     
-    ; Кнопка закрытия
-    CloseBtn := RuleEditorGui.AddText("x" (w-40) " y0 w40 h40 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
-    CloseBtn.OnEvent("Click", (*) => RuleEditorGui.Destroy())
-    ; (Можно добавить ховер, если хочешь, но для простоты опустим)
+    ; Кнопка закрытия (современная, с ховером и fade-закрытием)
+    CloseBtn := CreateStyledButton(RuleEditorGui, w-40, 0, 40, 40, "✕",
+        (*) => (FadeOutGui(RuleEditorGui, "destroy")), "close")
     
     y := 60
     x := 25
@@ -813,6 +798,7 @@ ShowRuleEditor(editIndex := 0) {
     RuleEditorGui.Show("w" w " h" h)
     WinGetPos(,, &ww, &wh, RuleEditorGui.Hwnd)
     RuleEditorGui.Move((A_ScreenWidth - ww) // 2, (A_ScreenHeight - wh) // 2)
+    MakeWindowRounded(RuleEditorGui, 12)
 }
 
 ; === ИСПРАВЛЕННАЯ ФУНКЦИЯ ВЫБОРА ПАПКИ ===

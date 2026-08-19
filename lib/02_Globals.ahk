@@ -99,6 +99,7 @@ global CurrentEditSlot := 0, EditorLineCount := 12, EditorScrollPos := 1, Editor
 global MaxUndoSteps := Constants.MAX_UNDO_STEPS, EDITOR_VISIBLE_LINES := Constants.EDITOR_VISIBLE_LINES
 
 global BtnConfirmDelay := "", EditorInputHook := "", EditorBlinkState := false
+global g_BtnFmtAt := "", g_BtnFmtQuote := "", g_BtnFmtPlain := ""
 global WheelGui := "", BindSelectorGui := "", FilterPopupGui := "", btnFilterDisplay := "", RuleEditorGui := ""
 global MentionNotifyGui := "", SmsNotifyGui := "", LastSmsNotification := ""
 global ChatLogPath := A_MyDocuments "\GTA San Andreas User Files\SAMP\chatlog.txt", LastLogPos := 0

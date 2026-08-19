@@ -46,16 +46,7 @@ OpenBindEditor(slotNum) {
     bindTitle := slot["name"] != "" ? slot["name"] : "Новый бинд"
     EditorGui.AddText("x20 y10 w600 h30 c" THEME["accent"] " BackgroundTrans", "✏️ РЕДАКТОР: " bindTitle)
     
-    CloseBtn := EditorGui.AddText("x" (totalW - 45) " y0 w45 h45 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
-    CloseBtn.OnEvent("Click", (*) => SafeCloseEditor())
-    HoverButtons.Push({
-        ctrl: CloseBtn, parent: EditorGui, isClickable: true,
-        colors: {bg: THEME["bgLight"], hover: THEME["error"]}, 
-        SetHover: (thisObj, state) => (
-            CloseBtn.Opt("Background" (state ? THEME["error"] : THEME["bgLight"]) " c" (state ? "White" : THEME["textDim"])),
-            CloseBtn.Redraw()
-        )
-    })
+    CloseBtn := CreateStyledButton(EditorGui, totalW - 45, 0, 45, 45, "✕", (*) => SafeCloseEditor(), "close")
     titleDrag := EditorGui.AddText("x0 y0 w" (totalW - 50) " h45 BackgroundTrans", "")
     titleDrag.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, EditorGui.Hwnd))
     
@@ -65,8 +56,7 @@ OpenBindEditor(slotNum) {
     cardH := 65
     xCard := 20
     
-    EditorGui.AddText("x" xCard " y" yInfo " w" cardW " h" cardH " Background" THEME["bgLight"], "")
-    EditorGui.AddText("x" xCard " y" yInfo " w4 h" cardH " Background" THEME["warning"], "")
+    ModernPanel(EditorGui, xCard, yInfo, cardW, cardH, THEME["bgLight"], THEME["warning"], 12)
     
     yRow := yInfo + 18
     xIn := xCard + 20
@@ -82,7 +72,8 @@ OpenBindEditor(slotNum) {
     hkDisplay := slot["hotkey"] = "" ? "Нажмите..." : FormatHotkey(slot["hotkey"])
     hkColor := slot["hotkey"] = "" ? THEME["textMuted"] : THEME["accent"]
     EditorGui.SetFont("s10 bold", "Segoe UI")
-    EditorKeyDisplay := EditorGui.AddText("x" xIn " y" (yRow+8) " w140 h30 Center 0x200 Background" THEME["bgHighlight"] " c" hkColor " Border vEditorKeyDisplay", hkDisplay)
+    EditorKeyDisplay := EditorGui.AddText("x" xIn " y" (yRow+8) " w140 h30 Center 0x200 Background" THEME["bgHighlight"] " c" hkColor " vEditorKeyDisplay", hkDisplay)
+    RoundCorners(EditorKeyDisplay, 140, 30, 8)
     EditorGui.AddEdit("x0 y0 w0 h0 Hidden vEditorHotkey", slot["hotkey"])
     EditorKeyDisplay.OnEvent("Click", (*) => EditorStartCapture())
     xIn += 170
@@ -110,8 +101,7 @@ OpenBindEditor(slotNum) {
     leftW := 400
     mainH := 460
     
-    EditorGui.AddText("x" xCard " y" yMain " w" leftW " h" mainH " Background" THEME["bgLight"], "")
-    EditorGui.AddText("x" xCard " y" yMain " w4 h" mainH " Background" THEME["accent"], "")
+    ModernPanel(EditorGui, xCard, yMain, leftW, mainH, THEME["bgLight"], THEME["accent"], 12)
     
     EditorGui.SetFont("s11 bold", "Segoe UI")
     EditorGui.AddText("x" (xCard+20) " y" (yMain+15) " w200 c" THEME["accent"] " Background" THEME["bgLight"], "📜 СПИСОК СТРОК")
@@ -148,8 +138,7 @@ OpenBindEditor(slotNum) {
     xRight := xCard + leftW + 20
     rightW := totalW - 40 - leftW - 20
     
-    EditorGui.AddText("x" xRight " y" yMain " w" rightW " h" mainH " Background" THEME["bgLight"], "")
-    EditorGui.AddText("x" xRight " y" yMain " w4 h" mainH " Background" THEME["success"], "")
+    ModernPanel(EditorGui, xRight, yMain, rightW, mainH, THEME["bgLight"], THEME["success"], 12)
     
     EditorGui.SetFont("s11 bold", "Segoe UI")
     EditorGui.AddText("x" (xRight+20) " y" (yMain+15) " w200 c" THEME["success"] " Background" THEME["bgLight"], "✏️ РЕДАКТИРОВАНИЕ")
@@ -190,7 +179,7 @@ OpenBindEditor(slotNum) {
     
     ; ЗЕЛЕНАЯ ГАЛОЧКА (Скрыта по умолчанию)
     BtnConfirmDelay := CreateStyledButton(EditorGui, xRight+200, yDelay, 40, 30, "✔", (*) => EditorConfirmDelay(), "success")
-    BtnConfirmDelay.ctrl.Visible := false 
+    BtnConfirmDelay.SetVisible(false)
     
     CreateStyledButton(EditorGui, xRight+250, yDelay, 50, 30, "1200", (*) => EditorSetDelay(1200), "default")
     CreateStyledButton(EditorGui, xRight+305, yDelay, 50, 30, "2300", (*) => EditorSetDelay(2300), "default")
@@ -224,6 +213,7 @@ OpenBindEditor(slotNum) {
     xPos := (A_ScreenWidth - totalW) // 2
     yPos := (A_ScreenHeight - totalH) // 2
     EditorGui.Show("x" xPos " y" yPos " w" totalW " h" totalH)
+    MakeWindowRounded(EditorGui, 12)
 }
 
 ; ══════════════════════════════════════════════════════════════════════════
@@ -548,7 +538,7 @@ SafeCloseEditor() {
     
     if !EditorHasChanges {
         CleanupHoverButtons(EditorGui)
-        EditorGui.Destroy()
+        FadeOutGui(EditorGui, "destroy")
         EditorGui := ""
         return
     }
@@ -560,7 +550,7 @@ SafeCloseEditor() {
     }
     else if result = "No" {
         CleanupHoverButtons(EditorGui)
-        EditorGui.Destroy()
+        FadeOutGui(EditorGui, "destroy")
         EditorGui := ""
         
         Undo() ; Откатываем изменения в массиве

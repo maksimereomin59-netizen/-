@@ -1,105 +1,122 @@
-; ╔══════════════════════════════════════════════════════════════╗
-; ║  Doctor Binder v2.1 — модуль: ui                            ║
-; ║  UI-компоненты: кнопки, ховер, тёмная тема      ║
-; ╚══════════════════════════════════════════════════════════════╝
+; ╔══════════════════════════════════════════════════════════════════╗
+; ║  Doctor Binder v2.1 — модуль: ui (MODERN ENGINE)                ║
+; ║  Современный UI на GDI+: скруглённые кнопки с градиентами,     ║
+; ║  плавные анимации ховера, анимированная навигация по вкладкам, ║
+; ║  fade-переходы, скруглённые карточки и окна                    ║
+; ╚══════════════════════════════════════════════════════════════════╝
 ; ВНИМАНИЕ: этот файл — МОДУЛЬ. Не запускайте его отдельно,
 ; он подключается через #Include из google.ahk
 ;
-class StyledBtn {
-    __New(parent, x, y, w, h, text, callback, style := "default", tip := "") {
-        global HoverButtons, THEME
-        this.parent := parent
-        this.x := x
-        this.y := y
-        this.w := w
-        this.h := h
-        this.callback := callback
-        this.style := style
-        this.tip := tip
-        this.colors := this.GetColors(style)
-        this.currentBg := this.colors.bg
-        this.isHovered := false
-        this.isClickable := true
-        ; Единый bound-объект таймера для плавной смены цвета
-        this._animTimer := this.AnimTick
-        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 Background" this.colors.bg " c" this.colors.text, text)
-        this.ctrl.SetFont("s9 bold", "Segoe UI")
-        this.ctrl.OnEvent("Click", (*) => this.OnClick())
-        RoundCorners(this.ctrl, w, h, 10)   ; современный скруглённый вид
-        HoverButtons.Push(this)
-    }
-    OnClick() {
-        if !this.isClickable
-            return
-        this.ctrl.Move(this.x + 1, this.y + 1)
-        Sleep(60) 
-        this.ctrl.Move(this.x, this.y)
-        Sleep(20)
-        this.callback.Call()
-    }
-    GetColors(style) {
-        style := StrLower(style)
-        switch style {
-            case "success", "green", "ok", "save": return {bg: "365e3d", hover: "42734a", text: "ffffff"} 
-            case "danger", "red", "delete", "error": return {bg: "6e2e36", hover: "8a3840", text: "ffffff"}
-            case "info", "blue", "primary": return {bg: "2e3b6e", hover: "38498a", text: "ffffff"}
-            case "warning", "yellow": return {bg: "6e5b2e", hover: "8a7238", text: "ffffff"}
-            default: return {bg: "2b2b3b", hover: "36364a", text: "cdd6f4"}
-        }
-    }
-    SetHover(state) {
-        if !this.isClickable {
-            SetTimer(this._animTimer, 0)
-            this.currentBg := "252525"
-            this.ctrl.Opt("Background252525 c555555")
-            return
-        }
-        if this.isHovered = state
-            return
-        this.isHovered := state
 
-        ; Подсказка (tooltip) — показываем только если задана
-        if state {
-            if this.tip != ""
-                ToolTip(this.tip, , , 1000)
-        } else {
-            ToolTip(, , , 1000)
-        }
+; ═══════════════════════════════════════════════════════════════════════
+; GDI+ ДВИЖОК (самодостаточный, без внешних библиотек)
+; ═══════════════════════════════════════════════════════════════════════
+global GdipToken := 0
 
-        ; Плавный переход цвета фона
-        this.AnimateBg(state ? this.colors.hover : this.colors.bg)
+GdipStartup() {
+    global GdipToken
+    if GdipToken
+        return true
+    input := Buffer(16, 0)
+    NumPut("UInt", 1, input, 0)      ; GdiplusVersion = 1
+    NumPut("UInt", 0, input, 4)      ; DebugEventCallback
+    NumPut("UInt", 0, input, 8)      ; SuppressBackgroundThread
+    NumPut("UInt", 0, input, 12)     ; SuppressExternalCodecs
+    token := 0
+    if DllCall("gdiplus\GdiplusStartup", "Ptr*", &token, "Ptr", input, "Ptr", 0) = 0 {
+        GdipToken := token
+        return true
     }
-    AnimateBg(target) {
-        this._target := target
-        this._from := HexToRGB(this.currentBg)
-        this._to := HexToRGB(target)
-        this._step := 0
-        this._steps := 6
-        SetTimer(this._animTimer, 0)
-        SetTimer(this._animTimer, 15)
-    }
-    AnimTick() {
-        this._step++
-        t := Min(1, this._step / this._steps)
-        r := this._from[1] + (this._to[1] - this._from[1]) * t
-        g := this._from[2] + (this._to[2] - this._from[2]) * t
-        b := this._from[3] + (this._to[3] - this._from[3]) * t
-        this.currentBg := RGBToHex(r, g, b)
-        try {
-            this.ctrl.Opt("Background" this.currentBg)
-            this.ctrl.Redraw()
-        }
-        if this._step >= this._steps {
-            this.currentBg := this._target
-            try this.ctrl.Opt("Background" this.currentBg)
-            SetTimer(this._animTimer, 0)
-        }
-    }
+    return false
 }
 
-; ───────────────────────────────────────────────────────────────────
-; Вспомогательные функции для плавной анимации цвета
-; ───────────────────────────────────────────────────────────────────
+GdipCreateBitmap(w, h) {
+    pBitmap := 0
+    if DllCall("gdiplus\GdipCreateBitmapFromScan0", "UInt", w, "UInt", h, "Int", 0, "Int", 0x26200A, "Ptr", 0, "Ptr*", &pBitmap) != 0
+        return 0
+    return pBitmap
+}
+
+GdipGetGraphics(pBitmap) {
+    g := 0
+    DllCall("gdiplus\GdipGetImageGraphicsContext", "Ptr", pBitmap, "Ptr*", &g)
+    return g
+}
+
+GdipHBitmapFromBitmap(pBitmap) {
+    hbm := 0
+    ; Фон 0x00000000 → GDI+ премультиплицирует альфу, corners остаются прозрачными
+    if DllCall("gdiplus\GdipCreateHBITMAPFromBitmap", "Ptr", pBitmap, "Ptr*", &hbm, "UInt", 0x00000000) != 0
+        return 0
+    return hbm
+}
+
+GdipBrush(argb) {
+    p := 0
+    DllCall("gdiplus\GdipCreateSolidFill", "UInt", argb, "Ptr*", &p)
+    return p
+}
+
+GdipLineBrush(x1, y1, x2, y2, argb1, argb2) {
+    p := 0
+    DllCall("gdiplus\GdipCreateLineBrushI", "Int", x1, "Int", y1, "Int", x2, "Int", y2, "UInt", argb1, "UInt", argb2, "Int", 0, "Ptr*", &p)
+    return p
+}
+
+GdipPen(argb, width := 1) {
+    p := 0
+    DllCall("gdiplus\GdipCreatePen1", "UInt", argb, "Float", width, "Int", 2, "Ptr*", &p)
+    return p
+}
+
+GdipRoundedPath(x, y, w, h, r) {
+    r := Min(r, Min(w / 2, h / 2))
+    d := r * 2
+    path := 0
+    DllCall("gdiplus\GdipCreatePath", "Int", 0, "Ptr*", &path)
+    DllCall("gdiplus\GdipAddPathArc", "Ptr", path, "Float", x, "Float", y, "Float", d, "Float", d, "Float", 180, "Float", 90)
+    DllCall("gdiplus\GdipAddPathArc", "Ptr", path, "Float", x + w - d, "Float", y, "Float", d, "Float", d, "Float", 270, "Float", 90)
+    DllCall("gdiplus\GdipAddPathArc", "Ptr", path, "Float", x + w - d, "Float", y + h - d, "Float", d, "Float", d, "Float", 0, "Float", 90)
+    DllCall("gdiplus\GdipAddPathArc", "Ptr", path, "Float", x, "Float", y + h - d, "Float", d, "Float", d, "Float", 90, "Float", 90)
+    DllCall("gdiplus\GdipClosePathFigure", "Ptr", path)
+    return path
+}
+
+GdipFillRounded(g, x, y, w, h, r, argb) {
+    path := GdipRoundedPath(x, y, w, h, r)
+    brush := GdipBrush(argb)
+    DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
+    GdipDeleteBrush(brush)
+    DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+}
+
+GdipDrawRounded(g, x, y, w, h, r, argb, width := 1) {
+    path := GdipRoundedPath(x, y, w, h, r)
+    pen := GdipPen(argb, width)
+    DllCall("gdiplus\GdipDrawPath", "Ptr", g, "Ptr", pen, "Ptr", path)
+    GdipDeletePen(pen)
+    DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+}
+
+GdipDeleteBrush(p) {
+    DllCall("gdiplus\GdipDeleteBrush", "Ptr", p)
+}
+
+GdipDeletePen(p) {
+    DllCall("gdiplus\GdipDeletePen", "Ptr", p)
+}
+
+GdipDeleteGraphics(g) {
+    DllCall("gdiplus\GdipDeleteGraphics", "Ptr", g)
+}
+
+GdipDisposeImage(p) {
+    DllCall("gdiplus\GdipDisposeImage", "Ptr", p)
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; ЦВЕТОВЫЕ ПОМОЩНИКИ
+; ═══════════════════════════════════════════════════════════════════════
 HexToRGB(c) {
     c := Trim(c)
     if StrLen(c) < 6
@@ -111,27 +128,459 @@ RGBToHex(r, g, b) {
     return Format("{:02X}{:02X}{:02X}", Round(r), Round(g), Round(b))
 }
 
-; ───────────────────────────────────────────────────────────────────
-; Скругление углов контрола (для современного вида кнопок)
-; Работает через CreateRoundRectRgn + SetWindowRgn, подходит и для дочерних контролов.
-; ───────────────────────────────────────────────────────────────────
-RoundCorners(ctrl, w, h, radius := 10) {
-    try {
-        if (w < 4 || h < 4)
+ARGB(a, rgb) {
+    return (a << 24) | (rgb[1] << 16) | (rgb[2] << 8) | rgb[3]
+}
+
+; factor > 0 → светлее (к белому), factor < 0 → темнее (к чёрному)
+ShadeColor(c, f) {
+    if f >= 0
+        return [Round(c[1] + (255 - c[1]) * f), Round(c[2] + (255 - c[2]) * f), Round(c[3] + (255 - c[3]) * f)]
+    return [Round(c[1] * (1 + f)), Round(c[2] * (1 + f)), Round(c[3] * (1 + f))]
+}
+
+EaseOut(t) {
+    return 1 - (1 - t) * (1 - t)
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; MODERN BUTTON — скруглённая кнопка с градиентом и плавным ховером
+; Состоит из двух контролов: Picture (фон) + Text (подпись, нативный
+; рендер с эмодзи). Полностью совместима со старым интерфейсом StyledBtn.
+; ═══════════════════════════════════════════════════════════════════════
+class ModernButton {
+    __New(parent, x, y, w, h, text, callback, style := "default", tip := "") {
+        global HoverButtons, THEME
+        GdipStartup()
+        this.parent := parent
+        this.x := x
+        this.y := y
+        this.w := w
+        this.h := h
+        this.callback := callback
+        this.style := style
+        this.tip := tip
+        this.colors := this.GetColors(style)
+        this.currentBg := this.colors.bg
+        this.currentAlpha := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
+        this.isHovered := false
+        this.isClickable := true
+        this._isActive := false
+        this._hbm := 0
+        this._animTimer := ObjBindMethod(this, "AnimTick")
+        this._radius := (style = "close" || style = "clear") ? h // 2 : Min(Round(h * 0.34), 14)
+        ; Фон (скруглённый, с альфой) + текстовая подпись поверх
+        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
+        this._bgCtrl := this._bg
+        this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
+        fsize := w >= 300 ? 10 : 9
+        this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
+        this.ctrl.OnEvent("Click", (*) => this.OnClick())
+        this.ctrl._bgCtrl := this._bg   ; для групповых переключений видимости
+        ; Клик по фону кнопки (не только по тексту) тоже срабатывает
+        try this._bg.OnEvent("Click", (*) => this.OnClick())
+        HoverButtons.Push(this)
+        this._RenderState(this.currentBg, this.colors.text, this.currentAlpha)
+    }
+
+    GetColors(style) {
+        style := StrLower(style)
+        switch style {
+            case "success", "green", "ok", "save":
+                return {bg: "2f5238", hover: "3d6b47", text: "ffffff", textHover: "ffffff", border: "4a7a56"}
+            case "danger", "red", "delete", "error":
+                return {bg: "6e2e36", hover: "8a3b45", text: "ffffff", textHover: "ffffff", border: "9c4a55"}
+            case "info", "blue", "primary":
+                return {bg: "2e3b6e", hover: "3b4d8f", text: "ffffff", textHover: "ffffff", border: "4a5fb0"}
+            case "warning", "yellow":
+                return {bg: "6e5b2e", hover: "8a7338", text: "ffffff", textHover: "ffffff", border: "9a844e"}
+            case "accent":
+                return {bg: "89b4fa", hover: "a9c7fd", text: "181825", textHover: "181825", border: "b4befe"}
+            case "close":
+                return {bg: "000000", hover: "e64553", text: "a6adc8", textHover: "ffffff", border: "000000", alpha: 0}
+            case "clear":
+                return {bg: "000000", hover: "f38ba8", text: "6c7086", textHover: "f38ba8", border: "000000", alpha: 0, hoverAlpha: 80}
+            case "segmented":
+                return {bg: "313244", hover: "45475a", text: "a6adc8", textHover: "cdd6f4", border: "45475a", activeBg: "89b4fa", activeText: "181825"}
+            case "nav":
+                return {bg: "000000", hover: "3b3d4f", text: "a6adc8", textHover: "cdd6f4", border: "000000", alpha: 0, activeBg: "89b4fa", activeText: "181825"}
+            default:
+                return {bg: "2b2b3b", hover: "3a3a4f", text: "cdd6f4", textHover: "ffffff", border: "45475a"}
+        }
+    }
+
+    ; ---- Отрисовка фона в один кадр ----
+    _MakeBitmap(bgHex, alpha := 255) {
+        w := this.w
+        h := this.h
+        r := this._radius
+        pBitmap := GdipCreateBitmap(w, h)
+        if !pBitmap
+            return 0
+        g := GdipGetGraphics(pBitmap)
+        DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
+        ; Вертикальный градиент: чуть светлее сверху, темнее снизу
+        bgRGB := HexToRGB(bgHex)
+        top := ShadeColor(bgRGB, 0.12)
+        bottom := ShadeColor(bgRGB, -0.10)
+        brush := GdipLineBrush(0, 0, 0, h, ARGB(alpha, top), ARGB(alpha, bottom))
+        if brush {
+            path := GdipRoundedPath(0, 0, w, h, r)
+            DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
+            DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+            GdipDeleteBrush(brush)
+        }
+        ; Тонкая обводка
+        borderHex := this.colors.HasOwnProp("border") ? this.colors.border : "45475a"
+        if alpha > 30 && borderHex != "" && borderHex != "000000" {
+            pen := GdipPen(ARGB(alpha, HexToRGB(borderHex)), 1)
+            if pen {
+                path := GdipRoundedPath(0.5, 0.5, w - 1, h - 1, Max(1, r - 1))
+                DllCall("gdiplus\GdipDrawPath", "Ptr", g, "Ptr", pen, "Ptr", path)
+                DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+                GdipDeletePen(pen)
+            }
+        }
+        hbm := GdipHBitmapFromBitmap(pBitmap)
+        GdipDeleteGraphics(g)
+        GdipDisposeImage(pBitmap)
+        return hbm
+    }
+
+    _RenderState(bg, textColor, alpha := 255) {
+        hbm := this._MakeBitmap(bg, alpha)
+        if hbm {
+            if this._hbm
+                DllCall("DeleteObject", "Ptr", this._hbm)
+            this._hbm := hbm
+            try this._bg.Value := "HBITMAP:*" hbm
+        }
+        try this.ctrl.Opt("c" textColor)
+        try this.ctrl.Redraw()
+    }
+
+    ; ---- Плавная анимация смены цвета (ховер) ----
+    AnimateBg(target, targetAlpha := "") {
+        this._target := target
+        this._targetAlpha := targetAlpha = "" ? (this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255) : targetAlpha
+        this._from := HexToRGB(this.currentBg)
+        this._to := HexToRGB(target)
+        this._fromA := this.currentAlpha
+        this._toA := this._targetAlpha
+        this._step := 0
+        this._steps := 6
+        SetTimer(this._animTimer, 0)
+        SetTimer(this._animTimer, 15)
+    }
+
+    AnimTick() {
+        this._step++
+        t := Min(1, this._step / this._steps)
+        e := EaseOut(t)
+        r := this._from[1] + (this._to[1] - this._from[1]) * e
+        g := this._from[2] + (this._to[2] - this._from[2]) * e
+        b := this._from[3] + (this._to[3] - this._from[3]) * e
+        a := this._fromA + (this._toA - this._fromA) * e
+        this.currentBg := RGBToHex(r, g, b)
+        this.currentAlpha := Round(a)
+        textCol := this.colors.text
+        if this._isActive && this.colors.HasOwnProp("activeText")
+            textCol := this.colors.activeText
+        else if this.isHovered && this.colors.HasOwnProp("textHover")
+            textCol := this.colors.textHover
+        this._RenderState(this.currentBg, textCol, this.currentAlpha)
+        if this._step >= this._steps {
+            this.currentBg := this._target
+            this.currentAlpha := this._toA
+            SetTimer(this._animTimer, 0)
+        }
+    }
+
+    SetHover(state) {
+        if !this.isClickable {
+            SetTimer(this._animTimer, 0)
+            this._RenderState("20202b", "454555", 255)
             return
-        r := Min(radius * 2, Min(w, h))  ; не больше, чем сам контрол
-        hrgn := DllCall("gdi32\CreateRoundRectRgn", "Int", 0, "Int", 0, "Int", w + 1, "Int", h + 1, "Int", r, "Int", r, "Ptr")
-        DllCall("user32\SetWindowRgn", "Ptr", ctrl.Hwnd, "Ptr", hrgn, "Int", 1)
+        }
+        if this.isHovered = state
+            return
+        this.isHovered := state
+        if state {
+            if this.tip != ""
+                ToolTip(this.tip, , , 1000)
+        } else {
+            ToolTip(, , , 1000)
+        }
+        if this._isActive && this.colors.HasOwnProp("activeBg")
+            return
+        if state
+            this.AnimateBg(this.colors.hover, this.colors.HasOwnProp("hoverAlpha") ? this.colors.hoverAlpha : 255)
+        else
+            this.AnimateBg(this.colors.bg, this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255)
+    }
+
+    ; ---- Активное состояние (для сегментов и сайд-меню) ----
+    SetActive(flag) {
+        if this._isActive = flag
+            return
+        this._isActive := flag
+        SetTimer(this._animTimer, 0)
+        if flag && this.colors.HasOwnProp("activeBg") {
+            this.isHovered := false
+            this.currentBg := this.colors.activeBg
+            this.currentAlpha := 255
+            this._RenderState(this.colors.activeBg, this.colors.HasOwnProp("activeText") ? this.colors.activeText : this.colors.text, 255)
+        } else {
+            this.currentBg := this.colors.bg
+            this.currentAlpha := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
+            this._RenderState(this.currentBg, this.colors.text, this.currentAlpha)
+        }
+    }
+
+    ; ---- Включено/выключено (серый) ----
+    SetEnabledState(isActive, style := "success") {
+        if isActive {
+            this.colors := this.GetColors(style)
+            this.isClickable := true
+            this.isHovered := false
+            SetTimer(this._animTimer, 0)
+            this.currentBg := this.colors.bg
+            this.currentAlpha := this.colors.HasOwnProp("alpha") ? this.colors.alpha : 255
+            this._RenderState(this.currentBg, this.colors.text, this.currentAlpha)
+        } else {
+            this.isClickable := false
+            SetTimer(this._animTimer, 0)
+            this._RenderState("20202b", "454555", 255)
+        }
+    }
+
+    ; ---- Смена цветовой схемы на лету ----
+    SetColorScheme(colors) {
+        this.colors := colors
+        this.currentBg := colors.bg
+        this.currentAlpha := colors.HasOwnProp("alpha") ? colors.alpha : 255
+        this._RenderState(this.currentBg, colors.text, this.currentAlpha)
+    }
+
+    SetVisible(v) {
+        try this._bg.Visible := v
+        try this.ctrl.Visible := v
+    }
+
+    OnClick() {
+        if !this.isClickable
+            return
+        ; Эффект нажатия: лёгкое вдавливание
+        try this._bg.Move(this.x + 1, this.y + 1)
+        try this.ctrl.Move(this.x + 1, this.y + 1)
+        Sleep(55)
+        try this._bg.Move(this.x, this.y)
+        try this.ctrl.Move(this.x, this.y)
+        Sleep(15)
+        this.callback.Call()
     }
 }
 
+; ═══════════════════════════════════════════════════════════════════════
+; ФАБРИКА КНОПОК (интерфейс совместим со старым CreateStyledButton)
+; ═══════════════════════════════════════════════════════════════════════
 CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip := "") {
-    return StyledBtn(parent, x, y, w, h, text, callback, style, tip)
+    return ModernButton(parent, x, y, w, h, text, callback, style, tip)
 }
 
-; ───────────────────────────────────────────────────────────────────
-; Плавное появление окна (fade-in)
-; ───────────────────────────────────────────────────────────────────
+; ═══════════════════════════════════════════════════════════════════════
+; MODERN PANEL — скруглённая карточка с опциональной акцентной полосой
+; ═══════════════════════════════════════════════════════════════════════
+ModernPanel(parent, x, y, w, h, fill := "", accent := "", radius := 14, border := "") {
+    global THEME
+    GdipStartup()
+    fill := fill = "" ? THEME["bgLight"] : fill
+    pBitmap := GdipCreateBitmap(w, h)
+    if !pBitmap
+        return ""
+    g := GdipGetGraphics(pBitmap)
+    DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
+    ; Фон карточки
+    path := GdipRoundedPath(0, 0, w, h, radius)
+    brush := GdipBrush(ARGB(255, HexToRGB(fill)))
+    DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
+    GdipDeleteBrush(brush)
+    DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+    ; Обводка
+    if border != "" {
+        GdipDrawRounded(g, 0.5, 0.5, w - 1, h - 1, Max(1, radius - 1), ARGB(255, HexToRGB(border)), 1)
+    }
+    ; Акцентная полоска слева (скруглённая, с отступами)
+    if accent != "" {
+        aw := 4
+        path := GdipRoundedPath(0, 10, aw, h - 20, 2)
+        brush := GdipBrush(ARGB(255, HexToRGB(accent)))
+        DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
+        GdipDeleteBrush(brush)
+        DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+    }
+    hbm := GdipHBitmapFromBitmap(pBitmap)
+    GdipDeleteGraphics(g)
+    GdipDisposeImage(pBitmap)
+    if !hbm
+        return ""
+    pic := parent.AddPicture("x" x " y" y " w" w " h" h " BackgroundTrans", "HBITMAP:*" hbm)
+    DllCall("DeleteObject", "Ptr", hbm)
+    return pic
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; СОВРЕМЕННАЯ НАВИГАЦИЯ ПО ВКЛАДКАМ
+; — пункты-текст с ховером
+; — плавающий индикатор-пилюля (анимированный слайд)
+; — fade-переход содержимого при переключении
+; ═══════════════════════════════════════════════════════════════════════
+; Пункт навигации (класс нужен, чтобы SetHover был настоящим методом)
+class NavItem {
+    __New(nav, idx, ctrl, gui) {
+        this.nav := nav
+        this.idx := idx
+        this.ctrl := ctrl
+        this.parent := gui
+        this.isClickable := true
+        this.id := idx
+    }
+    SetHover(state) {
+        global THEME
+        if this.idx = this.nav.active
+            return
+        try this.ctrl.Opt("c" (state ? THEME["text"] : THEME["textDim"]))
+        try this.ctrl.Redraw()
+    }
+}
+
+class ModernNavBar {
+    __New(gui, tabs, labels, x, y, w, h, fadeRect := "") {
+        global THEME, HoverButtons
+        GdipStartup()
+        this.gui := gui
+        this.tabs := tabs
+        this.items := []
+        this.active := 1
+        this.fadeRect := fadeRect
+        this._step := 0
+        this._steps := 12
+        this._fromX := 0
+        this._toX := 0
+        this._anim := ObjBindMethod(this, "Tick")
+        itemW := Round(w / labels.Length)
+        this.itemW := itemW
+        this.indW := Min(96, itemW - 24)
+        this.indH := 3
+        this.indY := y + h + 1
+        for i, label in labels {
+            ix := x + (i - 1) * itemW
+            t := gui.AddText("x" ix " y" y " w" itemW " h" h " Center 0x200 BackgroundTrans c" (i = 1 ? THEME["accent"] : THEME["textDim"]), label)
+            t.SetFont("s10 bold", "Segoe UI")
+            t.OnEvent("Click", ((idx) => (*) => this.Select(idx))(i))
+            item := NavItem(this, i, t, gui)
+            this.items.Push({ctrl: t, id: i, item: item})
+            HoverButtons.Push(item)
+        }
+        ; Индикатор (пилюля под активным пунктом)
+        this.indicator := gui.AddPicture("x" (x + (itemW - this.indW) // 2) " y" this.indY " w" this.indW " h" this.indH " BackgroundTrans", "")
+        this.indX := x + (itemW - this.indW) // 2
+        this._RenderIndicator(THEME["accent"])
+    }
+
+    _RenderIndicator(color) {
+        GdipStartup()
+        w := this.indW
+        h := this.indH
+        pBitmap := GdipCreateBitmap(w, h)
+        if !pBitmap
+            return
+        g := GdipGetGraphics(pBitmap)
+        DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
+        GdipFillRounded(g, 0, 0, w, h, h / 2, ARGB(255, HexToRGB(color)))
+        hbm := GdipHBitmapFromBitmap(pBitmap)
+        GdipDeleteGraphics(g)
+        GdipDisposeImage(pBitmap)
+        if this._indHbm
+            DllCall("DeleteObject", "Ptr", this._indHbm)
+        this._indHbm := hbm
+        try this.indicator.Value := "HBITMAP:*" hbm
+    }
+
+    Select(idx) {
+        global THEME
+        if this.active = idx {
+            ; клик по активной вкладке — просто мягкий «пульс»
+            return
+        }
+        oldIdx := this.active
+        this.active := idx
+        ; Смена цвета пунктов
+        for i, item in this.items {
+            act := (i = idx)
+            try item.ctrl.Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
+            try item.ctrl.Redraw()
+        }
+        ; Переключаем вкладку
+        try this.tabs.Choose(idx)
+        ; Fade содержимого
+        if this.fadeRect != "" {
+            fr := this.fadeRect
+            GuiContentFade(this.gui, fr[1], fr[2], fr[3], fr[4])
+        }
+        ; Анимация индикатора от старой позиции к новой
+        this._fromX := this.indX
+        this._toX := this.indX + (idx - oldIdx) * this.itemW
+        this._step := 0
+        SetTimer(this._anim, 0)
+        SetTimer(this._anim, 12)
+    }
+
+    Tick() {
+        this._step++
+        t := Min(1, this._step / this._steps)
+        e := EaseOut(t)
+        nx := Round(this._fromX + (this._toX - this._fromX) * e)
+        try this.indicator.Move(nx, this.indY)
+        if this._step >= this._steps {
+            this.indX := this._toX
+            try this.indicator.Move(this.indX, this.indY)
+            SetTimer(this._anim, 0)
+        }
+    }
+}
+
+CreateModernNavBar(gui, tabs, labels, x, y, w, h, fadeRect := "") {
+    return ModernNavBar(gui, tabs, labels, x, y, w, h, fadeRect)
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; FADE-ПЕРЕХОД СОДЕРЖИМОГО (лёгкая «вуаль», плавно растворяется)
+; ═══════════════════════════════════════════════════════════════════════
+GuiContentFade(gui, x, y, w, h, maxAlpha := 150, steps := 10, interval := 14) {
+    global THEME
+    try {
+        if !WinExist("ahk_id " gui.Hwnd)
+            return
+        WinGetPos(&gx, &gy, , , "ahk_id " gui.Hwnd)
+        ov := Gui("+AlwaysOnTop -Caption +ToolWindow +Owner" gui.Hwnd)
+        ov.BackColor := THEME["bg"]
+        ov.MarginX := 0
+        ov.MarginY := 0
+        ov.Show("x" (gx + x) " y" (gy + y) " w" w " h" h " NA")
+        a := maxAlpha
+        Loop steps {
+            WinSetTransparent(a, ov)
+            a := maxAlpha - Round(maxAlpha * A_Index / steps)
+            Sleep interval
+        }
+        ov.Destroy()
+    }
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; FADE ОКОН
+; ═══════════════════════════════════════════════════════════════════════
 FadeInGui(gui, steps := 12, interval := 12) {
     try {
         WinSetTransparent(0, gui)
@@ -142,11 +591,74 @@ FadeInGui(gui, steps := 12, interval := 12) {
         }
         WinSetTransparent("Off", gui)
     } catch {
-        ; Если анимация не удалась — просто оставляем окно как есть
         try WinSetTransparent("Off", gui)
     }
 }
 
+FadeOutGui(gui, action := "hide", steps := 10, interval := 12) {
+    try {
+        Loop steps {
+            WinSetTransparent(255 - Round(255 * A_Index / steps), gui)
+            Sleep interval
+        }
+        WinSetTransparent(0, gui)
+        if action = "hide"
+            gui.Hide()
+        else if action = "destroy"
+            gui.Destroy()
+    } catch {
+        try {
+            if action = "hide"
+                gui.Hide()
+            else if action = "destroy"
+                gui.Destroy()
+        }
+    }
+    try WinSetTransparent("Off", gui)
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; СКРУГЛЕНИЕ УГЛОВ ОКНА (SetWindowRgn)
+; ═══════════════════════════════════════════════════════════════════════
+MakeWindowRounded(gui, radius := 12) {
+    try {
+        WinGetPos(&wx, &wy, &ww, &wh, "ahk_id " gui.Hwnd)
+        hrgn := DllCall("gdi32\CreateRoundRectRgn", "Int", 0, "Int", 0, "Int", ww, "Int", wh, "Int", radius * 2, "Int", radius * 2, "Ptr")
+        DllCall("user32\SetWindowRgn", "Ptr", gui.Hwnd, "Ptr", hrgn, "Int", 1)
+    }
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; Скругление углов контрола (для полей ввода и т.п.)
+; ═══════════════════════════════════════════════════════════════════════
+RoundCorners(ctrl, w, h, radius := 10) {
+    try {
+        if (w < 4 || h < 4)
+            return
+        r := Min(radius * 2, Min(w, h))
+        hrgn := DllCall("gdi32\CreateRoundRectRgn", "Int", 0, "Int", 0, "Int", w + 1, "Int", h + 1, "Int", r, "Int", r, "Ptr")
+        DllCall("user32\SetWindowRgn", "Ptr", ctrl.Hwnd, "Ptr", hrgn, "Int", 1)
+    }
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; СОВРЕМЕННАЯ КНОПКА-КРЕСТИК (очистка полей)
+; ═══════════════════════════════════════════════════════════════════════
+CreateClearBtn(parent, x, y, size, callback) {
+    iconSymbol := Chr(0xE894)
+    btn := ModernButton(parent, x, y, size, size, iconSymbol, callback, "clear")
+    try {
+        btn.ctrl.SetFont("s10", "Segoe MDL2 Assets")
+    } catch {
+        btn.ctrl.Text := "✕"
+        btn.ctrl.SetFont("s10", "Segoe UI")
+    }
+    return btn.ctrl   ; совместимость: возвращаем текстовый контрол (+ _bgCtrl для групп)
+}
+
+; ═══════════════════════════════════════════════════════════════════════
+; ХОВЕР-СИСТЕМА (глобальный OnMessage(0x200))
+; ═══════════════════════════════════════════════════════════════════════
 WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
     global HoverButtons
     static lastHwnd := 0
@@ -156,7 +668,7 @@ WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
             return
         if (lastHwnd != 0) {
             for btn in HoverButtons {
-                if IsObject(btn) && IsObject(btn.ctrl) && btn.ctrl.Hwnd = lastHwnd {
+                if IsObject(btn) && IsObject(btn.ctrl) && (btn.ctrl.Hwnd = lastHwnd || (btn.HasOwnProp("_bg") && IsObject(btn._bg) && btn._bg.Hwnd = lastHwnd)) {
                     btn.SetHover(false)
                     break
                 }
@@ -164,7 +676,7 @@ WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
         }
         if (ctrlHwnd != 0) {
             for btn in HoverButtons {
-                if IsObject(btn) && IsObject(btn.ctrl) && btn.ctrl.Hwnd = ctrlHwnd {
+                if IsObject(btn) && IsObject(btn.ctrl) && (btn.ctrl.Hwnd = ctrlHwnd || (btn.HasOwnProp("_bg") && IsObject(btn._bg) && btn._bg.Hwnd = ctrlHwnd)) {
                     btn.SetHover(true)
                     lastHwnd := ctrlHwnd
                     return
@@ -189,13 +701,22 @@ CleanupHoverButtons(gui) {
             btn := HoverButtons[A_Index]
             if !IsObject(btn) || !btn.HasOwnProp("parent") || !btn.HasOwnProp("ctrl")
                 continue
-            if btn.parent = gui
+            if btn.parent = gui {
+                if btn.HasOwnProp("_hbm") && btn._hbm {
+                    DllCall("DeleteObject", "Ptr", btn._hbm)
+                    btn._hbm := 0
+                }
                 continue
+            }
             if !IsObject(btn.ctrl)
                 continue
             try {
-                if btn.ctrl.Hwnd && WinExist("ahk_id " btn.ctrl.Hwnd)
+                if btn.ctrl.Hwnd && WinExist("ahk_id " btn.ctrl.Hwnd) {
                     newButtons.Push(btn)
+                } else if btn.HasOwnProp("_hbm") && btn._hbm {
+                    DllCall("DeleteObject", "Ptr", btn._hbm)
+                    btn._hbm := 0
+                }
             }
         }
     }
@@ -205,84 +726,14 @@ CleanupHoverButtons(gui) {
 SetDarkControl(ctrl) {
     if !IsObject(ctrl)
         return
-        
     try {
         if VerCompare(A_OSVersion, "10.0.17763") >= 0 {
-            ; Попытка 1: Стандартная темная тема проводника
             DllCall("uxtheme\SetWindowTheme", "Ptr", ctrl.Hwnd, "Str", "DarkMode_Explorer", "Ptr", 0)
-            
-            ; Попытка 2: Если первая не сработала, иногда просто "Explorer" подхватывает темный режим приложения
-            ; (Можно раскомментировать, если первая не работает)
-            ; DllCall("uxtheme\SetWindowTheme", "Ptr", ctrl.Hwnd, "Str", "Explorer", "Ptr", 0)
         }
     }
 }
 
-
 SetListViewRowHeight(lv, height := 28) {
-    ; Создаём невидимый ImageList нужной высоты
-    ; Это единственный способ увеличить высоту строк в ListView
     hIL := DllCall("comctl32\ImageList_Create", "Int", 1, "Int", height, "UInt", 0x00000020, "Int", 1, "Int", 1, "Ptr")
     SendMessage(0x1003, 0, hIL, lv.Hwnd)  ; LVM_SETIMAGELIST, LVSIL_SMALL
 }
-
-
-; ══════════════════════════════════════════════════════════════════════════
-; ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ РЕДАКТОРА (ВСТАВИТЬ В КОНЕЦ, УДАЛИВ СТАРЫЕ)
-; ══════════════════════════════════════════════════════════════════════════
-
-CreateClearBtn(parent, x, y, size, callback) {
-    global THEME, HoverButtons
-    
-    iconSymbol := Chr(0xE894) ; Иконка крестика
-    
-    ; Создаем кнопку
-    btn := parent.AddText("x" x " y" y " w" size " h" size " Center 0x200 BackgroundTrans c" THEME["textMuted"], iconSymbol)
-    
-    try {
-        btn.SetFont("s10", "Segoe MDL2 Assets")
-    } catch {
-        btn.Value := "✕"
-        btn.SetFont("s10", "Segoe UI")
-    }
-    
-    ; === АНИМАЦИЯ НАЖАТИЯ ===
-    ; При нажатии (Click) выполняем действие, но сначала анимация
-    
-    ; Используем замыкание для хранения исходных координат
-    originalX := x
-    originalY := y
-    
-    ; Поскольку стандартный OnClick срабатывает после отпускания,
-    ; мы эмулируем анимацию через OnEvent("Click") с задержкой, 
-    ; но для реальной анимации "вдавливания" в AHK проще всего сделать так:
-    
-    btn.OnEvent("Click", (*) => (
-        ; 1. Вдавливаем (сдвиг +1px)
-        btn.Move(originalX + 1, originalY + 1),
-        Sleep(50), 
-        ; 2. Возвращаем
-        btn.Move(originalX, originalY),
-        Sleep(20),
-        ; 3. Выполняем действие
-        callback()
-    ))
-    
-    ; Ховер (Свечение)
-    HoverButtons.Push({
-        ctrl: btn,
-        parent: parent,
-        isClickable: true,
-        SetHover: (thisObj, state) => (
-            btn.Opt("c" (state ? "ff3333" : THEME["textMuted"])),
-            btn.Redraw()
-        )
-    })
-    
-    return btn
-}
-
-; ══════════════════════════════════════════════════════════════════════════
-; СИСТЕМА РАДИАЛЬНОГО МЕНЮ (WHEEL MENU) - ИСПРАВЛЕННАЯ
-; ══════════════════════════════════════════════════════════════════════════
-
