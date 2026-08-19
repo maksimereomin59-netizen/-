@@ -177,10 +177,10 @@ class ModernButton {
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 0x04000000 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
         this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
-        this.ctrl.OnEvent("Click", (*) => this.OnClick())
+        this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
         this.ctrl._bgCtrl := this._bg   ; для групповых переключений видимости
         ; Клик по фону кнопки (не только по тексту) тоже срабатывает
-        try this._bg.OnEvent("Click", (*) => this.OnClick())
+        try this._bg.OnEvent("Click", ObjBindMethod(this, "OnClick"))
         HoverButtons.Push(this)
         this._Precache()
         this._ShowFrame(1, this.colors.text)
@@ -397,9 +397,10 @@ class ModernButton {
     ; Поднимает кнопку в самый верх Z-порядка окна.
     ; Нужно для контролов поверх Tab-контрола: без этого нативный
     ; Tab3 рисуется ПОВЕРХ наших кнопок (старые вкладки «пробивают» панель)
+    ; ВНИМАНИЕ: WinSetTop — это команда WinSet, Top, в функциональном виде
     BringToTop() {
-        try WinSetTop("ahk_id " this._bg.Hwnd)
-        try WinSetTop("ahk_id " this.ctrl.Hwnd)
+        try DllCall("user32\SetWindowPos", "Ptr", this._bg.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
+        try DllCall("user32\SetWindowPos", "Ptr", this.ctrl.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
     }
 
     ; ---- Освобождение битмапов (при уничтожении окна) ----
@@ -505,7 +506,7 @@ class ModernNavBar {
         bw := itemW - 18
         for i, label in labels {
             ix := x + (i - 1) * itemW + (itemW - bw) // 2
-            btn := ModernButton(gui, ix, y, bw, h, label, ((idx) => (*) => this.Select(idx))(i), "nav")
+            btn := ModernButton(gui, ix, y, bw, h, label, ObjBindMethod(this, "Select", i), "nav")
             btn.ctrl.SetFont("s10 bold", "Segoe UI")
             btn.BringToTop()   ; поверх Tab3 — нативные вкладки не «пробивают»
             this.items.Push({btn: btn, id: i})
