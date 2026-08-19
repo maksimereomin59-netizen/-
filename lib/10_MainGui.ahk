@@ -64,10 +64,11 @@ BuildMainGui() {
     TitleBar.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, MainGui.Hwnd))
     
     ; === 3. ВКЛАДКИ ===
+    ; Нативный Tab3 используется только для группировки/скрытия контента,
+    ; его собственные заголовки мы прячем и рисуем современную панель навигации.
     tabs := MainGui.AddTab3("x10 y50 w940 h700 Background" THEME["bgLight"] " c" THEME["text"],
-        ["   Главная   ", "   Бинды   ", "   Настройки   ", "   Статистика   ", "   Справка   "])
-    MainGui.SetFont("s11 bold", "Segoe UI")
-    try SendMessage(0x1329, 0, 40, tabs.Hwnd)
+        ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
+    try SendMessage(0x1329, 0, 0, tabs.Hwnd)   ; TCM_SETITEMSIZE: высота заголовков = 0
 
     ; ==============================================================================
     ; 1. ГЛАВНАЯ (PERFECT GRID ALIGNMENT)
@@ -1154,6 +1155,44 @@ BuildMainGui() {
     MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], "")
     
     SwitchHelpTab("Overlay")
+
+    ; ==============================================================================
+    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (поверх нативных вкладок)
+    ; ==============================================================================
+    MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
+    MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
+
+    global NavItems := []
+    global NavActive := 1
+    navLabels := ["Главная", "Бинды", "Настройки", "Статистика", "Справка"]
+    navX := 20
+    for i, label in navLabels {
+        underline := MainGui.AddText("x" navX " y85 w110 h3 Background" (i = NavActive ? THEME["accent"] : THEME["bgLight"]), "")
+        btn := MainGui.AddText("x" navX " y56 w110 h28 Center c" (i = NavActive ? THEME["accent"] : THEME["textDim"]) " BackgroundTrans", label)
+        btn.SetFont("s10 bold", "Segoe UI")
+        btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
+        HoverButtons.Push({
+            ctrl: btn, parent: MainGui, isClickable: true, id: i,
+            SetHover: (thisObj, state) => (
+                (thisObj.id != NavActive ? btn.Opt("c" (state ? THEME["text"] : THEME["textDim"])) : ""),
+                btn.Redraw()
+            )
+        })
+        NavItems.Push(Map("btn", btn, "bar", underline))
+        navX += 120
+    }
+
+    NavSelect(idx) {
+        tabs.Choose(idx)
+        NavActive := idx
+        for i, item in NavItems {
+            act := (i = idx)
+            item["btn"].Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
+            item["bar"].Opt("Background" (act ? THEME["accent"] : THEME["bgLight"]))
+            item["btn"].Redraw()
+            item["bar"].Redraw()
+        }
+    }
 }
 
 ClearSearch(*) {

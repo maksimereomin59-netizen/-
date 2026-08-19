@@ -454,6 +454,16 @@ RefreshEditorList() {
     UpdateEditorLineCount()
 }
 
+; Вставляет текст в Edit-поле в текущую позицию курсора (через EM_REPLACESEL).
+; Раньше этой функции не было — кнопки тегов ({P}, /я, /фд и т.д.) молча не работали.
+EditPaste(text, ctrl) {
+    if !IsObject(ctrl)
+        return
+    ; EM_REPLACESEL (0xC2): заменяет текущее (пустое) выделение на текст,
+    ; т.е. вставляет текст в позицию курсора. wParam=true — разрешаем отмену (Ctrl+Z).
+    SendMessage(0xC2, true, StrPtr(text), ctrl.Hwnd)
+}
+
 EditorInsertTag(tag) {
     global EditorEditBox
     

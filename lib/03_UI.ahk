@@ -25,6 +25,7 @@ class StyledBtn {
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 Background" this.colors.bg " c" this.colors.text, text)
         this.ctrl.SetFont("s9 bold", "Segoe UI")
         this.ctrl.OnEvent("Click", (*) => this.OnClick())
+        RoundCorners(this.ctrl, w, h, 10)   ; современный скруглённый вид
         HoverButtons.Push(this)
     }
     OnClick() {
@@ -108,6 +109,20 @@ HexToRGB(c) {
 
 RGBToHex(r, g, b) {
     return Format("{:02X}{:02X}{:02X}", Round(r), Round(g), Round(b))
+}
+
+; ───────────────────────────────────────────────────────────────────
+; Скругление углов контрола (для современного вида кнопок)
+; Работает через CreateRoundRectRgn + SetWindowRgn, подходит и для дочерних контролов.
+; ───────────────────────────────────────────────────────────────────
+RoundCorners(ctrl, w, h, radius := 10) {
+    try {
+        if (w < 4 || h < 4)
+            return
+        r := Min(radius * 2, Min(w, h))  ; не больше, чем сам контрол
+        hrgn := DllCall("gdi32\CreateRoundRectRgn", "Int", 0, "Int", 0, "Int", w + 1, "Int", h + 1, "Int", r, "Int", r, "Ptr")
+        DllCall("user32\SetWindowRgn", "Ptr", ctrl.Hwnd, "Ptr", hrgn, "Int", 1)
+    }
 }
 
 CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip := "") {
