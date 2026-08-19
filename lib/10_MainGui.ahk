@@ -1157,7 +1157,10 @@ BuildMainGui() {
     SwitchHelpTab("Overlay")
 
     ; ==============================================================================
-    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (поверх нативных вкладок)
+    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (кнопки-пилюли)
+    ; Каждый пункт — скруглённая кнопка с фоном:
+    ;   активная   — залита акцентом, тёмный текст
+    ;   неактивная — тёмная подложка, при наведении подсвечивается
     ; ==============================================================================
     MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
     MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
@@ -1165,32 +1168,44 @@ BuildMainGui() {
     global NavItems := []
     global NavActive := 1
     navLabels := ["Главная", "Бинды", "Настройки", "Статистика", "Справка"]
+    navW := 112
+    navH := 28
+    navY := 56
     navX := 20
     for i, label in navLabels {
-        underline := MainGui.AddText("x" navX " y85 w110 h3 Background" (i = NavActive ? THEME["accent"] : THEME["bgLight"]), "")
-        btn := MainGui.AddText("x" navX " y56 w110 h28 Center c" (i = NavActive ? THEME["accent"] : THEME["textDim"]) " BackgroundTrans", label)
+        act := (i = NavActive)
+        ; Пилюля: один контрол с фоном + скругление (RoundCorners из патча)
+        btn := MainGui.AddText("x" navX " y" navY " w" navW " h" navH " Center 0x200 Background"
+            (act ? THEME["accent"] : THEME["bgHighlight"]) " c" (act ? THEME["bg"] : THEME["textDim"]), label)
         btn.SetFont("s10 bold", "Segoe UI")
+        RoundCorners(btn, navW, navH, navH // 2)   ; полностью скруглённая пилюля
         btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
         HoverButtons.Push({
             ctrl: btn, parent: MainGui, isClickable: true, id: i,
             SetHover: (thisObj, state) => (
-                (thisObj.id != NavActive ? btn.Opt("c" (state ? THEME["text"] : THEME["textDim"])) : ""),
-                btn.Redraw()
+                ; активную вкладку при наведении не трогаем
+                (thisObj.id != NavActive ? (
+                    ; прогрессия: bgHighlight (покой) -> bgSelected (ховер, светлее)
+                    btn.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
+                        " c" (state ? THEME["text"] : THEME["textDim"])),
+                    btn.Redraw()
+                ) : ""),
+                ; курсор-«рука» при наведении
+                DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
             )
         })
-        NavItems.Push(Map("btn", btn, "bar", underline))
-        navX += 120
+        NavItems.Push(Map("btn", btn, "id", i))
+        navX += navW + 12
     }
 
     NavSelect(idx) {
         tabs.Choose(idx)
         NavActive := idx
-        for i, item in NavItems {
-            act := (i = idx)
-            item["btn"].Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
-            item["bar"].Opt("Background" (act ? THEME["accent"] : THEME["bgLight"]))
+        for item in NavItems {
+            act := (item["id"] = idx)
+            item["btn"].Opt("Background" (act ? THEME["accent"] : THEME["bgHighlight"])
+                " c" (act ? THEME["bg"] : THEME["textDim"]))
             item["btn"].Redraw()
-            item["bar"].Redraw()
         }
     }
 }
