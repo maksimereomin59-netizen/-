@@ -158,6 +158,7 @@ LoadINIProfile(filePath) {
         MarkUnsaved()
         
     } catch as err {
+        LogError(err, "LoadINIProfile")
         ShowNotify("Ошибка загрузки: " err.Message, "error")
     }
 }
@@ -178,6 +179,7 @@ LoadACIProfile(filePath) {
             ParseACIAsText(content)
         }
     } catch as err {
+        LogError(err, "LoadACIProfile")
         ShowNotify("Ошибка чтения .aci: " err.Message, "error")
     }
 }
@@ -275,6 +277,7 @@ SaveProfileToFile(filePath) {
             }
         }
     } catch as err {
+        LogError(err, "SaveProfileToFile")
         ShowNotify("Ошибка сохранения: " err.Message, "error")
     }
 }

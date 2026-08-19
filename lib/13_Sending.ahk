@@ -275,6 +275,7 @@ SendSlot(slot) {
         }
     } catch as err {
         BlockInput false
+        LogError(err, "SendSlot")
         ShowNotify("Ошибка: " err.Message, "error")
     }
 

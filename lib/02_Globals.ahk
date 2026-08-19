@@ -50,6 +50,8 @@ global CFG := Map(
     "notifyMention", true,
     "notifyKeywords", false,
     "editorAutoSaveDelay", false,
+    "autoSave", true,
+    "autoSaveInterval", 60,
     
     "autoScreen", false,
     "ScreenRules", [],

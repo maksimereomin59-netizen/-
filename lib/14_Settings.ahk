@@ -132,6 +132,7 @@ SaveEverything() {
         Sleep(300) 
         
     } catch as err {
+        LogError(err, "SaveEverything")
         ShowNotify("Ошибка сохранения: " err.Message, "error")
         return
     }
@@ -165,8 +166,85 @@ TryRestoreButtonText() {
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; Главная функция (сохраняет ВСЁ - долго)
 SaveConfig() {
+    BackupConfig()        ; Сначала делаем резервную копию текущего конфига
     SaveGeneralSettings() ; Быстро
     SaveBinds()           ; Медленно (но нужно при выходе или глобальном сейве)
+}
+
+; ───────────────────────────────────────────────────────────────────
+; БЭКАП КОНФИГА ПЕРЕД СОХРАНЕНИЕМ
+; Копирует doctor_config.ini в папку backups\ с меткой времени,
+; оставляя только последние N копий.
+; ───────────────────────────────────────────────────────────────────
+BackupConfig() {
+    global CONFIG_FILE
+    static lastBackup := 0
+
+    ; Не чаще раза в 2 секунды (SaveConfig делает несколько записей подряд)
+    if (A_TickCount - lastBackup < 2000)
+        return
+    lastBackup := A_TickCount
+
+    try {
+        if !FileExist(CONFIG_FILE)
+            return
+        backupDir := A_ScriptDir "\backups"
+        if !DirExist(backupDir)
+            DirCreate(backupDir)
+        stamp := FormatTime(A_Now, "yyyyMMdd_HHmmss")
+        FileCopy(CONFIG_FILE, backupDir "\doctor_config_" stamp ".bak", 1)
+        TrimBackups(backupDir)
+    } catch as err {
+        OutputDebug("Backup failed: " err.Message)
+    }
+}
+
+; Оставляем только последние N бэкапов (самые старые удаляются)
+TrimBackups(dir) {
+    maxKeep := 10
+    names := []
+    Loop Files, dir "\*.bak"
+        names.Push(A_LoopFileName)
+
+    while names.Length > maxKeep {
+        oldest := names[1]
+        oldestIdx := 1
+        Loop names.Length {
+            if names[A_Index] < oldest {
+                oldest := names[A_Index]
+                oldestIdx := A_Index
+            }
+        }
+        try FileDelete(dir "\" oldest)
+        names.RemoveAt(oldestIdx)
+    }
+}
+
+; ───────────────────────────────────────────────────────────────────
+; АВТОСОХРАНЕНИЕ (вызывается по таймеру)
+; Сохраняет изменения тихо, если они есть и скрипт не занят отправкой.
+; ───────────────────────────────────────────────────────────────────
+AutoSaveTick() {
+    global GlobalUnsavedChanges, STATE, CFG, MainGui
+
+    ; Выключено / нет изменений / идёт отправка / окно не создано
+    if !CFG["autoSave"] || !GlobalUnsavedChanges
+        return
+    if STATE["isSending"]
+        return
+    if !MainGui
+        return
+
+    try {
+        SaveConfig()
+        SaveCustomFilters()
+        GlobalUnsavedChanges := false
+        TryRestoreButtonText()
+        Log("Автосохранение выполнено", "INFO")
+        ShowNotify("💾 Автосохранение", "success", 1500)
+    } catch as err {
+        LogError(err, "AutoSaveTick")
+    }
 }
 
 ; Функция сохранения ТОЛЬКО настроек (Мгновенно)
@@ -187,6 +265,8 @@ SaveGeneralSettings() {
         IniWrite(CFG["notifySms"] ? 1 : 0, CONFIG_FILE, "Settings", "notifySms")
         IniWrite(CFG["notifyKeywords"] ? 1 : 0, CONFIG_FILE, "Settings", "notifyKeywords")
         IniWrite(CFG["editorAutoSaveDelay"] ? 1 : 0, CONFIG_FILE, "Settings", "editorAutoSaveDelay")
+        IniWrite(CFG["autoSave"] ? 1 : 0, CONFIG_FILE, "Settings", "autoSave")
+        IniWrite(CFG["autoSaveInterval"], CONFIG_FILE, "Settings", "autoSaveInterval")
         
         ; Радиальное меню
         IniWrite(CFG["enableWheel"] ? 1 : 0, CONFIG_FILE, "Settings", "enableWheel")
@@ -281,6 +361,8 @@ LoadConfig() {
         CFG["notifySms"] := IniRead(CONFIG_FILE, "Settings", "notifySms", 1) = 1
         CFG["notifyKeywords"] := IniRead(CONFIG_FILE, "Settings", "notifyKeywords", 0) = 1
         CFG["editorAutoSaveDelay"] := IniRead(CONFIG_FILE, "Settings", "editorAutoSaveDelay", 0) = 1
+        CFG["autoSave"] := IniRead(CONFIG_FILE, "Settings", "autoSave", 1) = 1
+        CFG["autoSaveInterval"] := Integer(IniRead(CONFIG_FILE, "Settings", "autoSaveInterval", 60))
         
         ; Радиальное меню
         CFG["enableWheel"] := IniRead(CONFIG_FILE, "Settings", "enableWheel", 1) = 1
@@ -541,7 +623,9 @@ MoveScreenshotToFolder(targetPath) {
             return
             
         ; Проверка на свежесть (если файл создан более 5 секунд назад - это старый скрин)
-        if (DateDiff(A_Now, A_LoopFileTimeModified, "Seconds") < 5) {
+        ; ВАЖНО: используем latestTime — время САМОГО СВЕЖЕГО файла,
+        ; а не A_LoopFileTimeModified (это время последнего файла в цикле)
+        if (DateDiff(A_Now, latestTime, "Seconds") < 5) {
             ; Переименовываем и перемещаем
             SplitPath latestFile, &name, &dir, &ext
             newName := FormatTime(A_Now, "HH-mm-ss") "_" A_TickCount "." ext

@@ -5,8 +5,23 @@
 ; ВНИМАНИЕ: этот файл — МОДУЛЬ. Не запускайте его отдельно,
 ; он подключается через #Include из google.ahk
 ;
+; ───────────────────────────────────────────────────────────────────
+; ЛОГИРОВАНИЕ В ФАЙЛ (doctor_log.txt рядом со скриптом)
+; ───────────────────────────────────────────────────────────────────
+Log(msg, level := "INFO") {
+    try {
+        logFile := A_ScriptDir "\doctor_log.txt"
+        stamp := FormatTime(A_Now, "yyyy-MM-dd HH:mm:ss")
+        FileAppend("[" stamp "] [" level "] " msg "`r`n", logFile, "UTF-8")
+    }
+}
+
 LogError(err, context := "") {
-    OutputDebug("❌ " err.Message)
+    msg := (IsObject(err) && err.HasOwnProp("Message")) ? err.Message : String(err)
+    if (context != "")
+        msg := context " — " msg
+    OutputDebug("❌ " msg)
+    Log(msg, "ERROR")
 }
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗

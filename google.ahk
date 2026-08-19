@@ -162,6 +162,9 @@ UpdateOverlayData()          ; Заполняем данными
 
 SetTimer(UpdateAppClock, 1000) ; Обновлять часы каждую секунду
 
+; Автосохранение: проверяем изменения и сохраняем (интервал из настроек, по умолчанию 60 сек)
+SetTimer(AutoSaveTick, CFG["autoSaveInterval"] * 1000)
+
 ; 6. Показываем главное меню и приветствие
 ShowMainGui()
 ShowNotify("Doctor Binder v" VERSION " готов к работе!", "success", 3000)
