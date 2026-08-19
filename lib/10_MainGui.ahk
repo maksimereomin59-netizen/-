@@ -64,13 +64,13 @@ BuildMainGui() {
     TitleBar.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, MainGui.Hwnd))
     
     ; === 3. ВКЛАДКИ ===
-    ; Нативный Tab3 используется только для группировки/скрытия контента,
-    ; его собственные заголовки мы прячем и рисуем современную панель навигации.
-    ; TCS_FIXEDWIDTH (+0x0400) обязателен: без него TCM_SETITEMSIZE игнорируется
-    ; и родные заголовки вкладок остаются видимыми.
-    tabs := MainGui.AddTab3("x10 y50 w940 h700 +0x0400 Background" THEME["bgLight"] " c" THEME["text"],
+    ; Нативный Tab3 нужен только для группировки/скрытия контента вкладок:
+    ; контролы страниц — обычные дети окна с абсолютными координатами, а Tab3
+    ; лишь прячет/показывает их по номеру страницы (Choose).
+    ; Сам контрол унесён за пределы экрана — его родные заголовки не видны
+    ; и не мелькают при переключении (никакого мигания старых вкладок).
+    tabs := MainGui.AddTab3("x-3000 y-3000 w940 h700 Background" THEME["bgLight"] " c" THEME["text"],
         ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
-    try SendMessage(0x1329, 0, 0, tabs.Hwnd)   ; TCM_SETITEMSIZE: высота заголовков = 0
 
     ; ==============================================================================
     ; СОВРЕМЕННАЯ ШАПКА ВКЛАДКИ (единый компонент для всех разделов)
@@ -1171,55 +1171,60 @@ BuildMainGui() {
     SwitchHelpTab("Overlay")
 
     ; ==============================================================================
-    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (кнопки-пилюли)
-    ; Каждый пункт — скруглённая кнопка с фоном:
-    ;   активная   — залита акцентом, тёмный текст
-    ;   неактивная — тёмная подложка, при наведении подсвечивается
+    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (сегментированный контрол)
+    ; Единый скруглённый «трек» (bgHighlight), внутри — сегменты-кнопки:
+    ;   активный   — залит акцентным цветом, тёмный текст
+    ;   неактивный — в цвет трека, приглушённый текст; при наведении
+    ;                подсвечивается (bgSelected) и текст светлеет
+    ; Такой приём (segmented control) вписывается в дизайн биндера: та же
+    ; палитра и скругления, что у карточек, меню и шапок разделов.
     ;
     ; ВАЖНО: перед созданием навигации сбрасываем текущую вкладку (UseTab без
-    ; аргументов). Иначе контролы станут детьми последней вкладки Tab3 и будут
-    ; видны только на ней. Панель должна быть ребёнком окна, лежать ПОВЕРХ
-    ; Tab3 и перекрывать его родные заголовки.
+    ; аргументов), иначе контролы станут детьми последней вкладки Tab3.
     ; ==============================================================================
     tabs.UseTab()   ; сброс: следующие контролы добавляются в окно, а не во вкладку
     MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
     MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
 
+    ; Трек-подложка сегментов
+    segTrack := MainGui.AddText("x20 y56 w920 h28 Background" THEME["bgHighlight"], "")
+    RoundCorners(segTrack, 920, 28, 14)
+
     global NavItems := []
     global NavActive := 1
-    navLabels := ["🏠 Главная", "📋 Бинды", "⚙️ Настройки", "📊 Статистика", "❓ Справка"]
-    navW := 128
-    navH := 28
-    navY := 56
-    navX := 20
-    for i, label in navLabels {
+    navLabels := [["🏠", "Главная"], ["📋", "Бинды"], ["⚙️", "Настройки"], ["📊", "Статистика"], ["❓", "Справка"]]
+    segW := 177
+    segGap := 6
+    segY := 58
+    segH := 24
+    segX := 24
+    for i, pair in navLabels {
         act := (i = NavActive)
-        ; Пилюля: один контрол с фоном + скругление (RoundCorners из патча)
-        btn := MainGui.AddText("x" navX " y" navY " w" navW " h" navH " Center 0x200 Background"
-            (act ? THEME["accent"] : THEME["bgHighlight"]) " c" (act ? THEME["bg"] : THEME["textDim"]), label)
-        btn.SetFont("s10 bold", "Segoe UI")
-        RoundCorners(btn, navW, navH, navH // 2)   ; полностью скруглённая пилюля
+        ; Сегмент: иконка + подпись. Активный — акцентная заливка, неактивный — в цвет трека.
+        btn := MainGui.AddText("x" segX " y" segY " w" segW " h" segH " Center 0x200 Background"
+            (act ? THEME["accent"] : THEME["bgHighlight"]) " c" (act ? THEME["bg"] : THEME["textDim"]), pair[1] " " pair[2])
+        btn.SetFont("s9 bold", "Segoe UI")
+        RoundCorners(btn, segW, segH, 12)
         btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
         HoverButtons.Push({
-            ctrl: btn, parent: MainGui, isClickable: true, id: i,
+            ctrl: btn, parent: MainGui, isClickable: true, id: i, isNav: true, active: act,
             SetHover: (thisObj, state) => (
-                ; активную вкладку при наведении не трогаем
-                (thisObj.id != NavActive ? (
-                    ; прогрессия: bgHighlight (покой) -> bgSelected (ховер, светлее)
-                    btn.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
+                ; активный сегмент при наведении не трогаем
+                (!thisObj.active ? (
+                    thisObj.ctrl.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
                         " c" (state ? THEME["text"] : THEME["textDim"])),
-                    btn.Redraw()
+                    thisObj.ctrl.Redraw()
                 ) : ""),
                 ; курсор-«рука» при наведении
                 DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
             )
         })
         NavItems.Push(Map("btn", btn, "id", i))
-        navX += navW + 12
+        segX += segW + segGap
     }
 
     NavSelect(idx) {
-        global NavItems, NavActive
+        global NavItems, NavActive, HoverButtons
         tabs.Choose(idx)
         NavActive := idx
         for item in NavItems {
@@ -1227,6 +1232,11 @@ BuildMainGui() {
             item["btn"].Opt("Background" (act ? THEME["accent"] : THEME["bgHighlight"])
                 " c" (act ? THEME["bg"] : THEME["textDim"]))
             item["btn"].Redraw()
+        }
+        ; синхронизируем hover-состояния сегментов (чтобы подсветка не залипала)
+        for hb in HoverButtons {
+            if IsObject(hb) && hb.HasOwnProp("isNav") && hb.isNav
+                hb.active := (hb.id = idx)
         }
     }
 }
