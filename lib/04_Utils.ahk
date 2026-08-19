@@ -46,17 +46,21 @@ SaveUndoState(action := "action") {
 
 Undo(*) {
     global UndoHistory, SLOTS
-    if UndoHistory.Length = 0 {
-        ShowNotify("Нет действий для отмены", "warning")
-        return
+    try {
+        if UndoHistory.Length = 0 {
+            ShowNotify("Нет действий для отмены", "warning")
+            return
+        }
+        state := UndoHistory.Pop()
+        Loop Constants.MAX_SLOTS
+            SLOTS[A_Index] := state["slots"][A_Index]
+        try RefreshBindList()
+        try UpdateOverlayData()
+        try RegisterAllHotkeys()
+        ShowNotify("↩ Отменено: " state["action"], "success")
+    } catch {
+        ShowNotify("Не удалось отменить действие", "error")
     }
-    state := UndoHistory.Pop()
-    Loop Constants.MAX_SLOTS
-        SLOTS[A_Index] := state["slots"][A_Index]
-    RefreshBindList()
-    UpdateOverlayData()
-    RegisterAllHotkeys()
-    ShowNotify("↩ Отменено: " state["action"], "success")
 }
 
 GetCurrentModifiers() {

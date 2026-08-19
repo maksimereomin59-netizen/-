@@ -106,7 +106,7 @@ BuildMainGui() {
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     ; Имя
-    MainGui.AddText("x" xIn " y" (y+3) " w100 c" THEME["textDim"] " Background" THEME["bgLight"], "Имя Фамилия:")
+    MainGui.AddText("x" xIn " y" (y+3) " w100 c" THEME["textDim"] " BackgroundTrans", "Имя Фамилия:")
     MainGui.AddEdit("x" (xIn+110) " y" y " w" wInput " h30 Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileName", STATE["myName"])
     MainGui["ProfileName"].OnEvent("Change", (*) => CheckProfileDirty())
     CreateStyledButton(MainGui, xIn+370, y, 40, 30, "🕵️", (*) => AutoFillSmart(), "info")
@@ -114,24 +114,23 @@ BuildMainGui() {
     
     y += 50
     ; Больница
-    MainGui.AddText("x" xIn " y" (y+3) " w100 c" THEME["textDim"] " Background" THEME["bgLight"], "Больница:")
+    MainGui.AddText("x" xIn " y" (y+3) " w100 c" THEME["textDim"] " BackgroundTrans", "Больница:")
     MainGui.AddEdit("x" (xIn+110) " y" y " w300 h30 Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileHospital", STATE["hospital"])
     MainGui["ProfileHospital"].OnEvent("Change", (*) => CheckProfileDirty())
     
     y += 50
     ; Специальность
-    MainGui.AddText("x" xIn " y" (y+3) " w100 c" THEME["textDim"] " Background" THEME["bgLight"], "Специальность:")
+    MainGui.AddText("x" xIn " y" (y+3) " w100 c" THEME["textDim"] " BackgroundTrans", "Специальность:")
     MainGui.AddEdit("x" (xIn+110) " y" y " w300 h30 Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileSpecialty", STATE["specialty"])
     MainGui["ProfileSpecialty"].OnEvent("Change", (*) => CheckProfileDirty())
     
     y += 60
     ; Кнопка сохранения профиля
-    g_BtnSaveProfile := CreateStyledButton(MainGui, xIn, y, 410, 40, "✅ Сохранить данные врача", (*) => ApplyProfile(), "success", "Сохранить имя, больницу и специальность")
-    UpdateButtonState(g_BtnSaveProfile, false)
+    g_BtnSaveProfile := CreateStyledButton(MainGui, xIn, y, 410, 40, "✅ Сохранить данные врача", (*) => ApplyProfile(), "accent", "Сохранить имя, больницу и специальность")
     
     ; Подсказка в самом низу карточки
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" (y+55) " w400 c" THEME["textDim"] " Background" THEME["bgLight"], "Переменные: {MY}, {HOSPITAL}, {SPECIALTY}")
+    MainGui.AddText("x" xIn " y" (y+55) " w400 c" THEME["textDim"] " BackgroundTrans", "Переменные: {MY}, {HOSPITAL}, {SPECIALTY}")
 
 
     ; ======================= ПРАВАЯ КОЛОНКА (ДВЕ КАРТОЧКИ) =======================
@@ -149,7 +148,7 @@ BuildMainGui() {
     xIn := xRight + 20
     
     MainGui.SetFont("s10 norm", "Segoe UI")
-    MainGui.AddText("x" xIn " y" (yIn+5) " w30 c" THEME["textDim"] " Background" THEME["bgLight"], "ID:")
+    MainGui.AddText("x" xIn " y" (yIn+5) " w30 c" THEME["textDim"] " BackgroundTrans", "ID:")
     
     MainGui.SetFont("s14 bold", "Consolas")
     MainGui.AddEdit("x" (xIn+40) " y" yIn " w100 h34 Center Background" THEME["bgHighlight"] " c" THEME["accent"] " vMainPatientId", STATE["patientId"])
@@ -160,7 +159,7 @@ BuildMainGui() {
     
     yIn += 50
     MainGui.SetFont("s10 norm", "Segoe UI")
-    MainGui.AddText("x" xIn " y" yIn " w150 c" THEME["textDim"] " Background" THEME["bgLight"], "Отображение:")
+    MainGui.AddText("x" xIn " y" yIn " w150 c" THEME["textDim"] " BackgroundTrans", "Отображение:")
     MainGui.SetFont("s11 bold", "Consolas")
     MainGui.AddText("x" (xIn+110) " y" yIn " w250 c" THEME["success"] " BackgroundTrans vMainPatientDisplay", GetPatientDisplay() = "" ? "—" : GetPatientDisplay())
     
@@ -201,8 +200,8 @@ BuildMainGui() {
         UpdateButtonState(g_BtnGlobalSave, false)
     }
     
-    ; Кнопка отмены слева
-    CreateStyledButton(MainGui, xLeft, yBottom, colW, 50, "🔙 Отменить последнее действие", (*) => Undo(), "warning", "Откатить последнее изменение биндов")
+    ; Кнопка отмены слева (современный стиль, как у сохранения)
+    CreateStyledButton(MainGui, xLeft, yBottom, colW, 50, "↩ Отменить действие", (*) => Undo(), "default", "Откатить последнее изменение биндов")
 
     ; ==============================================================================
     ; 2. БИНДЫ (MODERN MANAGER LAYOUT)
@@ -469,8 +468,8 @@ BuildMainGui() {
     AddToGroup("General", MainGui.AddText("x" x " y" (y+3) " w150 c" THEME["textDim"], "Клавиша чата (F6/T):"))
     val := CFG["chatKey"]
     disp := val = "" ? "—" : FormatHotkey(val)
-    hkChat := MainGui.AddText("x" (x+160) " y" y " w120 h26 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_ChatKey", disp)
-    RoundCorners(hkChat, 120, 26, 8)
+    hkChat := MainGui.AddText("x" (x+160) " y" y " w120 h26 Center 0x200 Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_ChatKey", disp)
+    RoundCorners(hkChat, 120, 26, 8)   ; БЕЗ Border — иначе прямоугольная рамка вылезает за скругление
     AddToGroup("General", hkChat)
     MainGui.AddEdit("x0 y0 w0 h0 Hidden vValue_ChatKey", val) 
     ; Делаем чуть меньше и квадратным (30x30)
@@ -595,8 +594,8 @@ BuildMainGui() {
         disp := val = "" ? "—" : FormatHotkey(val)
         
         ; Поле отображения клавиши
-        hk := MainGui.AddText("x" (x+130) " y" yPos " w200 h28 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_" type, disp)
-        RoundCorners(hk, 200, 28, 8)
+        hk := MainGui.AddText("x" (x+130) " y" yPos " w200 h28 Center 0x200 Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_" type, disp)
+        RoundCorners(hk, 200, 28, 8)   ; БЕЗ Border — иначе прямоугольник поверх скругления
         AddToGroup("Hotkeys", hk)
         
         ; Скрытое поле для хранения значения
@@ -739,7 +738,7 @@ BuildMainGui() {
     CreateStyledButton(MainGui, 180, y, 140, 40, "📊 Сброс стат.", (*) => ResetStats(), "danger")
     CreateStyledButton(MainGui, 330, y, 140, 40, "🗑️ Удал. бинды", (*) => ClearAllBindsAction(), "danger")
     
-    g_BtnSaveSettings := CreateStyledButton(MainGui, 490, y, 440, 40, "💾 Сохранить изменения", (*) => ApplyAndSaveSettings(), "success")
+    g_BtnSaveSettings := CreateStyledButton(MainGui, 490, y, 440, 40, "💾 Сохранить настройки", (*) => ApplyAndSaveSettings(), "success", "Применить и сохранить все настройки")
     UpdateButtonState(g_BtnSaveSettings, false)
     
     SwitchSettingTab("General")
@@ -1098,18 +1097,25 @@ BuildMainGui() {
         global TabPages, CurrentSettingTab, CurrentStatTab, CurrentHelpTab
         if !IsObject(TabPages) || !TabPages.Has(n)
             return
+        ; Батчим перерисовку: показ/скрытие страниц одним махом —
+        ; без мигания и «рванья» текста при переключении
+        try MainGui.Opt("-Redraw")
         for i, ctrls in TabPages {
             vis := (i = n)
             for c in ctrls {
                 try c.Visible := vis
             }
         }
+        ; Восстанавливаем выбранный раздел бокового меню (без мигания групп:
+        ; у страницы 3/4/5 группы уже в правильном состоянии, вызываем только
+        ; если нужно — но безопаснее просто переключить)
         if n = 3
             SwitchSettingTab(CurrentSettingTab)
         else if n = 4
             SwitchStatTab(CurrentStatTab)
         else if n = 5
             SwitchHelpTab(CurrentHelpTab)
+        try MainGui.Opt("+Redraw")
     }
 
     ; Собираем страницы ПЕРЕД созданием навигации: конструктор NavBar

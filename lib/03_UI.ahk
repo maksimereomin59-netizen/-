@@ -179,14 +179,25 @@ class ModernButton {
         this._animTimer := ObjBindMethod(this, "AnimTick")
         this._animDir := 0
         this._radius := (style = "close" || style = "clear" || style = "nav") ? h // 2 : Min(Round(h * 0.34), 14)
-        ; Фон (скруглённый, с альфой) + текстовая подпись поверх
-        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
-        this._scale := GetScale(this._bg.Hwnd)
-        this._bgCtrl := this._bg
+        ; Крестики (close/clear): БЕЗ Picture-фона — только текст-кнопка.
+        ; Прозрачный битмап давал чёрный прямоугольник; текст с ховером
+        ; (краснеет) выглядит чисто и современно.
+        this._isGhost := (style = "close" || style = "clear")
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" this.colors.text, text)
         fsize := w >= 300 ? 10 : 9
         this.ctrl.SetFont("s" fsize " bold", "Segoe UI")
         this.ctrl.OnEvent("Click", ObjBindMethod(this, "OnClick"))
+        if this._isGhost {
+            this._bg := ""
+            this._bgCtrl := ""
+            this.ctrl._bgCtrl := ""
+            HoverButtons.Push(this)
+            return
+        }
+        ; Фон (скруглённый, с альфой) + текстовая подпись поверх
+        this._bg := parent.AddPicture("x" x " y" y " w" w " h" h " 0x200 BackgroundTrans", "")
+        this._scale := GetScale(this._bg.Hwnd)
+        this._bgCtrl := this._bg
         this.ctrl._bgCtrl := this._bg   ; для групповых переключений видимости
         ; Клик по фону кнопки (не только по тексту) тоже срабатывает
         try this._bg.OnEvent("Click", ObjBindMethod(this, "OnClick"))
@@ -209,9 +220,9 @@ class ModernButton {
             case "accent":
                 return {bg: "89b4fa", hover: "a9c7fd", text: "181825", textHover: "181825", border: "b4befe"}
             case "close":
-                return {bg: "000000", hover: "e64553", text: "a6adc8", textHover: "ffffff", border: "000000", alpha: 0}
+                return {bg: "000000", hover: "000000", text: "a6adc8", textHover: "e64553", border: "000000", alpha: 0, hoverAlpha: 0}
             case "clear":
-                return {bg: "000000", hover: "f38ba8", text: "6c7086", textHover: "f38ba8", border: "000000", alpha: 0, hoverAlpha: 90}
+                return {bg: "000000", hover: "000000", text: "6c7086", textHover: "e64553", border: "000000", alpha: 0, hoverAlpha: 0}
             case "segmented":
                 return {bg: "36385a", hover: "4a4e78", text: "c8cde8", textHover: "f0f2ff", border: "565a88", activeBg: "89b4fa", activeText: "181825"}
             case "nav":
@@ -232,24 +243,29 @@ class ModernButton {
             return 0
         g := GdipGetGraphics(pBitmap)
         DllCall("gdiplus\GdipSetSmoothingMode", "Ptr", g, "Int", 4)
-        ; Вертикальный градиент: чуть светлее сверху, темнее снизу
-        bgRGB := HexToRGB(bgHex)
-        top := ShadeColor(bgRGB, 0.12)
-        bottom := ShadeColor(bgRGB, -0.10)
-        brush := GdipLineBrush(0, 0, 0, h, ARGB(alpha, top), ARGB(alpha, bottom))
-        if brush {
-            path := GdipRoundedPath(0, 0, w, h, r)
-            DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
-            DllCall("gdiplus\GdipDeletePath", "Ptr", path)
-            GdipDeleteBrush(brush)
+        ; Вертикальный градиент: чуть светлее сверху, темнее снизу.
+        ; ВАЖНО: если alpha=0 (прозрачные крестики) — фон НЕ рисуем вовсе,
+        ; иначе HBITMAP с нулевой альфой даёт чёрный прямоугольник
+        if alpha > 5 {
+            bgRGB := HexToRGB(bgHex)
+            top := ShadeColor(bgRGB, 0.12)
+            bottom := ShadeColor(bgRGB, -0.10)
+            brush := GdipLineBrush(0, 0, 0, h, ARGB(alpha, top), ARGB(alpha, bottom))
+            if brush {
+                path := GdipRoundedPath(0, 0, w, h, r)
+                DllCall("gdiplus\GdipFillPath", "Ptr", g, "Ptr", brush, "Ptr", path)
+                DllCall("gdiplus\GdipDeletePath", "Ptr", path)
+                GdipDeleteBrush(brush)
+            }
         }
-        ; Тонкая обводка (толщина = масштаб DPI, чтобы была ровной)
+        ; Обводка: 2px (в DPI-пикселях) — тонкая 1px выглядела «пиксельной» и портила вид
         borderHex := this.colors.HasOwnProp("border") ? this.colors.border : "45475a"
         if alpha > 30 && borderHex != "" && borderHex != "000000" {
-            pen := GdipPen(ARGB(alpha, HexToRGB(borderHex)), Max(1, Round(s)))
+            bw := Max(2, Round(2 * s))
+            pen := GdipPen(ARGB(alpha, HexToRGB(borderHex)), bw)
             if pen {
-                inset := s / 2
-                path := GdipRoundedPath(inset, inset, w - s, h - s, Max(1, r - Round(s)))
+                inset := bw / 2
+                path := GdipRoundedPath(inset, inset, w - bw, h - bw, Max(1, r - Round(bw)))
                 DllCall("gdiplus\GdipDrawPath", "Ptr", g, "Ptr", pen, "Ptr", path)
                 DllCall("gdiplus\GdipDeletePath", "Ptr", path)
                 GdipDeletePen(pen)
@@ -303,6 +319,12 @@ class ModernButton {
 
     ; ---- Показ кадра из кэша (дешёвая операция) ----
     _ShowFrame(idx, textCol := "") {
+        ; Ghost-кнопки (крестики): фона нет — только цвет текста
+        if this._isGhost {
+            if textCol != ""
+                try this.ctrl.Opt("c" textCol)
+            return
+        }
         hbm := 0
         if idx = "disabled"
             hbm := this._GetDisabled()
@@ -328,11 +350,14 @@ class ModernButton {
         if !this.isClickable {
             SetTimer(this._animTimer, 0)
             this._ShowFrame("disabled", "76769a")
+            try DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", 32512, "Ptr"))
             return
         }
         if this.isHovered = state
             return
         this.isHovered := state
+        ; Курсор-«рука» (IDC_HAND = 32649) при наведении, обычная стрелка (32512) при уходе
+        try DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
         if state {
             if this.tip != ""
                 ToolTip(this.tip, , , 1000)
@@ -411,6 +436,8 @@ class ModernButton {
     ; ВНИМАНИЕ: WinSetTop() как функция НЕ существует в AHK v2,
     ; поэтому поднимаем через user32\SetWindowPos (HWND_TOP = -1)
     BringToTop() {
+        if this._isGhost
+            return
         try DllCall("user32\SetWindowPos", "Ptr", this._bg.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
         try DllCall("user32\SetWindowPos", "Ptr", this.ctrl.Hwnd, "Ptr", -1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001|0x0002|0x0010)
     }
@@ -687,6 +714,7 @@ CleanupHoverButtons(gui) {
                     btn._FreeBitmaps()
                 continue
             }
+            ; ghost-кнопки (без _bg) — пропускаем проверку _bg
             if !IsObject(btn.ctrl)
                 continue
             try {
