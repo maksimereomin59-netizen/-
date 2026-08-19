@@ -71,28 +71,46 @@ BuildMainGui() {
     try SendMessage(0x1329, 0, 0, tabs.Hwnd)   ; TCM_SETITEMSIZE: высота заголовков = 0
 
     ; ==============================================================================
-    ; 1. ГЛАВНАЯ (PERFECT GRID ALIGNMENT)
+    ; СОВРЕМЕННАЯ ШАПКА ВКЛАДКИ (единый компонент для всех разделов)
+    ; Скруглённая панель + цветной акцент + плитка-иконка + заголовок +
+    ; подзаголовок + статус-чип справа. Вместо старого Impact-стиля.
+    ; ==============================================================================
+    AddModernHeader(y, icon, iconColor, title, subtitle, chip := "", chipColor := THEME["textDim"]) {
+        ; Панель-подложка со скруглёнными углами
+        pnl := MainGui.AddText("x20 y" y " w920 h100 Background" THEME["bgLight"], "")
+        RoundCorners(pnl, 920, 100, 16)
+        ; Цветной акцент слева (тонкая скруглённая полоска)
+        bar := MainGui.AddText("x20 y" y " w5 h100 Background" iconColor, "")
+        RoundCorners(bar, 5, 100, 10)
+        ; Плитка с иконкой
+        tile := MainGui.AddText("x40 y" (y+16) " w68 h68 Center 0x200 Background" THEME["bgHighlight"] " c" iconColor, icon)
+        tile.SetFont("s28", "Segoe UI Symbol")
+        RoundCorners(tile, 68, 68, 18)
+        ; Заголовок раздела
+        tit := MainGui.AddText("x126 y" (y+18) " w520 h34 c" THEME["text"] " BackgroundTrans", title)
+        tit.SetFont("s20 bold", "Segoe UI")
+        ; Подзаголовок
+        sub := MainGui.AddText("x128 y" (y+56) " w520 h22 c" THEME["textDim"] " BackgroundTrans", subtitle)
+        sub.SetFont("s10", "Segoe UI")
+        ; Статус-чип справа
+        if chip != "" {
+            cw := Max(120, 24 + StrLen(chip) * 8)
+            ch := MainGui.AddText("x" (940 - 20 - cw) " y" (y+34) " w" cw " h32 Center 0x200 Background" THEME["bgHighlight"] " c" chipColor, chip)
+            ch.SetFont("s9 bold", "Segoe UI")
+            RoundCorners(ch, cw, 32, 16)
+        }
+    }
+
+    ; ==============================================================================
+    ; 1. ГЛАВНАЯ
     ; ==============================================================================
     tabs.UseTab(1)
     
     yHead := 90 
     
-    ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["error"], "")
-    MainGui.SetFont("s48", "Segoe UI Symbol")
-    MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["error"] " BackgroundTrans", "✚")
-    MainGui.SetFont("s36", "Impact") 
-    MainGui.AddText("x143 y" (yHead+13) " w500 h60 c" THEME["bg"] " BackgroundTrans", "DOCTOR BINDER")
-    MainGui.AddText("x140 y" (yHead+10) " w500 h60 c" THEME["text"] " BackgroundTrans", "DOCTOR BINDER")
-    MainGui.SetFont("s12 bold", "Consolas")
-    MainGui.AddText("x142 y" (yHead+65) " w400 h30 c" THEME["accent"] " BackgroundTrans", "v2.1  •  by maxon3r")
-    MainGui.SetFont("s9 bold", "Segoe UI")
-    MainGui.AddText("x750 y" (yHead+25) " w170 Right c" THEME["textDim"] " BackgroundTrans", "MEDICAL ASSISTANT")
-    MainGui.SetFont("s11 bold", "Segoe UI")
-    MainGui.AddText("x700 y" (yHead+45) " w220 Right c" THEME["error"] " BackgroundTrans", "ABSOLUTE ROLE PLAY")
-    MainGui.SetFont("s8", "Segoe UI")
-    MainGui.AddText("x800 y" (yHead+70) " w120 h24 Right c" THEME["success"] " BackgroundTrans", "● SYSTEM ACTIVE")
+    ; --- ШАПКА (современная) ---
+    AddModernHeader(yHead, "✚", THEME["error"], "Doctor Binder",
+        "Личное дело и быстрое управление", "● СИСТЕМА АКТИВНА", THEME["success"])
     
     ; --- СЕТКА ---
     yStart := 210
@@ -105,8 +123,10 @@ BuildMainGui() {
     ; ======================= ЛЕВАЯ КОЛОНКА (ОДНА БОЛЬШАЯ КАРТОЧКА) =======================
     
     ; Карточка: Личное дело
-    MainGui.AddText("x" xLeft " y" yStart " w" colW " h420 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xLeft " y" yStart " w4 h420 Background" THEME["accentLight"], "") 
+    cardProfile := MainGui.AddText("x" xLeft " y" yStart " w" colW " h420 Background" THEME["bgLight"], "")
+    RoundCorners(cardProfile, colW, 420, 14)
+    stripeProfile := MainGui.AddText("x" xLeft " y" yStart " w4 h420 Background" THEME["accentLight"], "")
+    RoundCorners(stripeProfile, 4, 420, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xLeft+20) " y" (yStart+15) " w" (colW-40) " c" THEME["accentLight"], "👤 ЛИЧНОЕ ДЕЛО")
@@ -152,8 +172,10 @@ BuildMainGui() {
     y := yStart
     
     ; --- КАРТОЧКА 1: ПАЦИЕНТ (Высота 160) ---
-    MainGui.AddText("x" xRight " y" y " w" colW " h160 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" y " w4 h160 Background" THEME["success"], "") 
+    cardPatient := MainGui.AddText("x" xRight " y" y " w" colW " h160 Background" THEME["bgLight"], "")
+    RoundCorners(cardPatient, colW, 160, 14)
+    stripePatient := MainGui.AddText("x" xRight " y" y " w4 h160 Background" THEME["success"], "")
+    RoundCorners(stripePatient, 4, 160, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["success"], "👥 ТЕКУЩИЙ ПАЦИЕНТ")
@@ -181,8 +203,10 @@ BuildMainGui() {
     
     ; --- КАРТОЧКА 2: УПРАВЛЕНИЕ (Высота 240) ---
     y += 180
-    MainGui.AddText("x" xRight " y" y " w" colW " h240 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" y " w4 h240 Background" THEME["warning"], "") 
+    cardControl := MainGui.AddText("x" xRight " y" y " w" colW " h240 Background" THEME["bgLight"], "")
+    RoundCorners(cardControl, colW, 240, 14)
+    stripeControl := MainGui.AddText("x" xRight " y" y " w4 h240 Background" THEME["warning"], "")
+    RoundCorners(stripeControl, 4, 240, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["warning"], "⚡ БЫСТРОЕ УПРАВЛЕНИЕ")
@@ -226,20 +250,9 @@ BuildMainGui() {
     
     yHead := 90 
     
-    ; --- ШАПКА (ЕДИНЫЙ СТИЛЬ) ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["accent"], "") ; Синяя полоса для биндов
-    MainGui.SetFont("s48", "Segoe UI Symbol")
-    MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["accent"] " BackgroundTrans", "📋")
-    MainGui.SetFont("s36", "Impact") 
-    MainGui.AddText("x143 y" (yHead+13) " w500 h60 c" THEME["bg"] " BackgroundTrans", "BIND MANAGER")
-    MainGui.AddText("x140 y" (yHead+10) " w500 h60 c" THEME["text"] " BackgroundTrans", "BIND MANAGER")
-    MainGui.SetFont("s12 bold", "Consolas")
-    MainGui.AddText("x142 y" (yHead+65) " w400 h30 c" THEME["accentLight"] " BackgroundTrans", "Управление и настройка")
-    
-    ; Статистика справа (краткая)
-    MainGui.SetFont("s9 bold", "Segoe UI")
-    MainGui.AddText("x750 y" (yHead+35) " w170 Right c" THEME["textDim"] " BackgroundTrans", "ВСЕГО СЛОТОВ: " Constants.MAX_SLOTS)
+    ; --- ШАПКА (современная) ---
+    AddModernHeader(yHead, "📋", THEME["accent"], "Бинды",
+        "Управление и настройка", "ВСЕГО СЛОТОВ: " Constants.MAX_SLOTS)
     
     
     ; --- ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ ---
@@ -249,8 +262,10 @@ BuildMainGui() {
     wList := 660
     
     ; Карточка списка
-    MainGui.AddText("x20 y" yStart " w" wList " h500 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yStart " w4 h500 Background" THEME["accent"], "")
+    cardList := MainGui.AddText("x20 y" yStart " w" wList " h500 Background" THEME["bgLight"], "")
+    RoundCorners(cardList, wList, 500, 14)
+    stripeList := MainGui.AddText("x20 y" yStart " w4 h500 Background" THEME["accent"], "")
+    RoundCorners(stripeList, 4, 500, 14)
     
     ; --- ПАНЕЛЬ ИНСТРУМЕНТОВ (TOOLBAR) ---
     yTool := yStart + 15
@@ -346,8 +361,10 @@ BuildMainGui() {
     wRight := 240
     
     ; Карточка действий
-    MainGui.AddText("x" xRight " y" yStart " w" wRight " h500 Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" yStart " w4 h500 Background" THEME["warning"], "") ; Желтая полоса
+    cardActions := MainGui.AddText("x" xRight " y" yStart " w" wRight " h500 Background" THEME["bgLight"], "")
+    RoundCorners(cardActions, wRight, 500, 14)
+    stripeActions := MainGui.AddText("x" xRight " y" yStart " w4 h500 Background" THEME["warning"], "")
+    RoundCorners(stripeActions, 4, 500, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
     MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"], "⚡ ДЕЙСТВИЯ")
@@ -390,16 +407,9 @@ BuildMainGui() {
     
     yHead := 90
     
-    ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["warning"], "") 
-    MainGui.SetFont("s48", "Segoe UI Symbol")
-    MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["warning"] " BackgroundTrans", "⚙️")
-    MainGui.SetFont("s36", "Impact") 
-    MainGui.AddText("x143 y" (yHead+13) " w500 h60 c" THEME["bg"] " BackgroundTrans", "SETTINGS")
-    MainGui.AddText("x140 y" (yHead+10) " w500 h60 c" THEME["text"] " BackgroundTrans", "SETTINGS")
-    MainGui.SetFont("s12 bold", "Consolas")
-    MainGui.AddText("x142 y" (yHead+65) " w400 h30 c" THEME["textDim"] " BackgroundTrans", "Конфигурация биндера")
+    ; --- ШАПКА (современная) ---
+    AddModernHeader(yHead, "⚙️", THEME["warning"], "Настройки",
+        "Конфигурация биндера")
     
     yStart := 210
     
@@ -408,8 +418,9 @@ BuildMainGui() {
     wMenu := 240
     hMenu := 440 ; Высота меню и контента
     
-    ; Фон под меню
-    MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    ; Фон под меню (скруглённая панель)
+    menuPanel := MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(menuPanel, wMenu, hMenu, 14)
     
     SettingGroups := Map()
     SettingGroups["General"] := []
@@ -419,30 +430,27 @@ BuildMainGui() {
     SettingGroups["Screenshots"] := []
 
     
-    ; Функция создания кнопки меню
+    ; Функция создания кнопки меню (современная пилюля, как в верхней навигации)
     CreateSideBtn(yPos, text, id) {
-        ; 1. СНАЧАЛА УСТАНАВЛИВАЕМ ШРИФТ
-        MainGui.SetFont("s10 bold", "Segoe UI")
-        
-        ; 2. ПОТОМ СОЗДАЕМ КНОПКУ
-        btn := MainGui.AddText("x" xMenu " y" yPos " w" wMenu " h50 Center 0x200 Background" THEME["bgLight"], text)
-        
-        ; Событие
+        w := wMenu - 24
+        btn := MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text)
+        btn.SetFont("s10 bold", "Segoe UI")
+        RoundCorners(btn, w, 42, 21)   ; полностью скруглённая пилюля
         btn.OnEvent("Click", (*) => SwitchSettingTab(id))
-        
-        ; Hover
         HoverButtons.Push({
             ctrl: btn,
             parent: MainGui,
             isClickable: true,
-            id: id, 
-            colors: {bg: THEME["bgLight"], hover: THEME["bgHover"]}, 
+            id: id,
             SetHover: (thisObj, state) => (
-                (CurrentSettingTab != thisObj.id) ? btn.Opt("Background" (state ? THEME["bgHover"] : THEME["bgLight"])) : "",
-                btn.Redraw()
+                (CurrentSettingTab != thisObj.id) ? (
+                    btn.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
+                        " c" (state ? THEME["text"] : THEME["textDim"])),
+                    btn.Redraw()
+                ) : "",
+                DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
             )
         })
-        
         return {ctrl: btn, id: id}
     }
     
@@ -462,12 +470,12 @@ BuildMainGui() {
         for btn in MenuBtns {
             isActive := (btn.id = tabName)
             if isActive {
-                ; АКТИВНАЯ: Синий фон, Темный текст (Очень заметно)
+                ; АКТИВНАЯ: акцентная пилюля, тёмный текст
                 btn.ctrl.Opt("Background" THEME["accent"] " c" THEME["bg"])
-                btn.ctrl.SetFont("s11 bold")
+                btn.ctrl.SetFont("s10 bold")
             } else {
-                ; ОБЫЧНАЯ: Фон меню, Серый текст
-                btn.ctrl.Opt("Background" THEME["bgLight"] " c" THEME["textDim"])
+                ; ОБЫЧНАЯ: тёмная подложка, приглушённый текст
+                btn.ctrl.Opt("Background" THEME["bgHighlight"] " c" THEME["textDim"])
                 btn.ctrl.SetFont("s10 norm")
             }
             btn.ctrl.Redraw()
@@ -490,9 +498,11 @@ BuildMainGui() {
     wContent := 640
     
     ; ФОНОВАЯ ПОДЛОЖКА ПОД КОНТЕНТ (ВИЗУАЛЬНЫЙ КОНТЕЙНЕР)
-    MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    contentPanel := MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(contentPanel, wContent, hMenu, 14)
     ; Декоративная линия слева от контента
-    MainGui.AddText("x" xContent " y" yStart " w2 h" hMenu " Background" THEME["border"], "")
+    contentLine := MainGui.AddText("x" xContent " y" yStart " w2 h" hMenu " Background" THEME["border"], "")
+    RoundCorners(contentLine, 2, hMenu, 14)
     
     AddToGroup(group, ctrl) {
         SettingGroups[group].Push(ctrl)
@@ -798,16 +808,9 @@ BuildMainGui() {
     
     yHead := 90
     
-    ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["success"], "") 
-    MainGui.SetFont("s48", "Segoe UI Symbol")
-    MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["success"] " BackgroundTrans", "📊")
-    MainGui.SetFont("s36", "Impact") 
-    MainGui.AddText("x143 y" (yHead+13) " w500 h60 c" THEME["bg"] " BackgroundTrans", "STATISTICS")
-    MainGui.AddText("x140 y" (yHead+10) " w500 h60 c" THEME["text"] " BackgroundTrans", "STATISTICS")
-    MainGui.SetFont("s12 bold", "Consolas")
-    MainGui.AddText("x142 y" (yHead+65) " w400 h30 c" THEME["textDim"] " BackgroundTrans", "Анализ сессии")
+    ; --- ШАПКА (современная) ---
+    AddModernHeader(yHead, "📊", THEME["success"], "Статистика",
+        "Анализ сессии")
     
     ; --- ЛЕВОЕ МЕНЮ ---
     yStart := 200
@@ -815,24 +818,29 @@ BuildMainGui() {
     wMenu := 240
     hMenu := 440
     
-    MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    statPanel := MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(statPanel, wMenu, hMenu, 14)
     
     StatGroups := Map()
     StatGroups["Dashboard"] := []
     StatGroups["Info"] := []
     
-    ; Функция кнопки меню статистики
+    ; Функция кнопки меню статистики (современная пилюля)
     CreateStatBtn(yPos, text, id) {
-        btn := MainGui.AddText("x" xMenu " y" yPos " w" wMenu " h50 Center 0x200 Background" THEME["bgLight"], text)
-        MainGui.SetFont("s10 bold", "Segoe UI")
+        w := wMenu - 24
+        btn := MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text)
+        btn.SetFont("s10 bold", "Segoe UI")
+        RoundCorners(btn, w, 42, 21)
         btn.OnEvent("Click", (*) => SwitchStatTab(id))
-        
         HoverButtons.Push({
             ctrl: btn, parent: MainGui, isClickable: true, id: id,
-            colors: {bg: THEME["bgLight"], hover: THEME["bgHover"]}, 
             SetHover: (thisObj, state) => (
-                (CurrentStatTab != thisObj.id) ? btn.Opt("Background" (state ? THEME["bgHover"] : THEME["bgLight"])) : "",
-                btn.Redraw()
+                (CurrentStatTab != thisObj.id) ? (
+                    btn.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
+                        " c" (state ? THEME["text"] : THEME["textDim"])),
+                    btn.Redraw()
+                ) : "",
+                DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
             )
         })
         return {ctrl: btn, id: id}
@@ -850,9 +858,9 @@ BuildMainGui() {
             isActive := (btn.id = tabName)
             if isActive {
                 btn.ctrl.Opt("Background" THEME["success"] " c" THEME["bg"])
-                btn.ctrl.SetFont("s11 bold")
+                btn.ctrl.SetFont("s10 bold")
             } else {
-                btn.ctrl.Opt("Background" THEME["bgLight"] " c" THEME["textDim"])
+                btn.ctrl.Opt("Background" THEME["bgHighlight"] " c" THEME["textDim"])
                 btn.ctrl.SetFont("s10 norm")
             }
             btn.ctrl.Redraw()
@@ -871,7 +879,8 @@ BuildMainGui() {
     xContent := xMenu + wMenu + 20
     wContent := 640
     
-    MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    statContent := MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(statContent, wContent, hMenu, 14)
     
     AddToStatGroup(group, ctrl) {
         StatGroups[group].Push(ctrl)
@@ -884,7 +893,9 @@ BuildMainGui() {
     
     CreateDashCard(x, y, w, h, title, varName, value, color, icon) {
         bg := MainGui.AddText("x" x " y" y " w" w " h" h " Background" THEME["bg"], "") ; Фон темнее (bg) на светлом (bgLight)
+        RoundCorners(bg, w, h, 10)
         line := MainGui.AddText("x" x " y" y " w4 h" h " Background" color, "")
+        RoundCorners(line, 4, h, 10)
         
         MainGui.SetFont("s42", "Segoe UI Symbol") 
         ico := MainGui.AddText("x" (x+w-60) " y" (y+10) " w60 h60 Right c" THEME["bgHighlight"] " BackgroundTrans", icon)
@@ -964,16 +975,9 @@ BuildMainGui() {
     
     yHead := 90
     
-    ; --- ШАПКА ---
-    MainGui.AddText("x20 y" yHead " w920 h100 Background" THEME["bgLight"], "")
-    MainGui.AddText("x20 y" yHead " w6 h100 Background" THEME["accentLight"], "") 
-    MainGui.SetFont("s48", "Segoe UI Symbol")
-    MainGui.AddText("x50 y" (yHead+10) " w80 h80 c" THEME["accentLight"] " BackgroundTrans", "❓")
-    MainGui.SetFont("s36", "Impact") 
-    MainGui.AddText("x143 y" (yHead+13) " w500 h60 c" THEME["bg"] " BackgroundTrans", "HELP CENTER")
-    MainGui.AddText("x140 y" (yHead+10) " w500 h60 c" THEME["text"] " BackgroundTrans", "HELP CENTER")
-    MainGui.SetFont("s12 bold", "Consolas")
-    MainGui.AddText("x142 y" (yHead+65) " w400 h30 c" THEME["textDim"] " BackgroundTrans", "База знаний и поддержка")
+    ; --- ШАПКА (современная) ---
+    AddModernHeader(yHead, "❓", THEME["accentLight"], "Справка",
+        "База знаний и поддержка")
     
     yStart := 200
     
@@ -982,7 +986,8 @@ BuildMainGui() {
     wMenu := 200 ; Чуть уже
     hMenu := 460
     
-    MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    helpPanel := MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(helpPanel, wMenu, hMenu, 14)
     
     HelpGroups := Map()
     HelpGroups["Overlay"] := []
@@ -990,16 +995,20 @@ BuildMainGui() {
     HelpGroups["About"] := []
     
     CreateHelpBtn(yPos, text, id) {
-        btn := MainGui.AddText("x" xMenu " y" yPos " w" wMenu " h50 Center 0x200 Background" THEME["bgLight"], text)
-        MainGui.SetFont("s10 bold", "Segoe UI")
+        w := wMenu - 24
+        btn := MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text)
+        btn.SetFont("s10 bold", "Segoe UI")
+        RoundCorners(btn, w, 42, 21)
         btn.OnEvent("Click", (*) => SwitchHelpTab(id))
-        
         HoverButtons.Push({
             ctrl: btn, parent: MainGui, isClickable: true, id: id,
-            colors: {bg: THEME["bgLight"], hover: THEME["bgHover"]}, 
             SetHover: (thisObj, state) => (
-                (CurrentHelpTab != thisObj.id) ? btn.Opt("Background" (state ? THEME["bgHover"] : THEME["bgLight"])) : "",
-                btn.Redraw()
+                (CurrentHelpTab != thisObj.id) ? (
+                    btn.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
+                        " c" (state ? THEME["text"] : THEME["textDim"])),
+                    btn.Redraw()
+                ) : "",
+                DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
             )
         })
         return {ctrl: btn, id: id}
@@ -1018,9 +1027,9 @@ BuildMainGui() {
             isActive := (btn.id = tabName)
             if isActive {
                 btn.ctrl.Opt("Background" THEME["accent"] " c" THEME["bg"])
-                btn.ctrl.SetFont("s11 bold")
+                btn.ctrl.SetFont("s10 bold")
             } else {
-                btn.ctrl.Opt("Background" THEME["bgLight"] " c" THEME["textDim"])
+                btn.ctrl.Opt("Background" THEME["bgHighlight"] " c" THEME["textDim"])
                 btn.ctrl.SetFont("s10 norm")
             }
             btn.ctrl.Redraw()
@@ -1039,7 +1048,8 @@ BuildMainGui() {
     xCenter := xMenu + wMenu + 20
     wCenter := 440 ; Место под контент
     
-    MainGui.AddText("x" xCenter " y" yStart " w" wCenter " h" hMenu " Background" THEME["bgLight"], "")
+    centerPanel := MainGui.AddText("x" xCenter " y" yStart " w" wCenter " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(centerPanel, wCenter, hMenu, 14)
     
     AddToHelp(group, ctrl) {
         HelpGroups[group].Push(ctrl)
@@ -1116,8 +1126,10 @@ BuildMainGui() {
     y := yStart
     
     ; Фон правой панели
-    MainGui.AddText("x" xRight " y" y " w" wRight " h" hMenu " Background" THEME["bgLight"], "")
-    MainGui.AddText("x" xRight " y" y " w4 h" hMenu " Background" THEME["accent"], "")
+    rightPanel := MainGui.AddText("x" xRight " y" y " w" wRight " h" hMenu " Background" THEME["bgLight"], "")
+    RoundCorners(rightPanel, wRight, hMenu, 14)
+    rightStripe := MainGui.AddText("x" xRight " y" y " w4 h" hMenu " Background" THEME["accent"], "")
+    RoundCorners(rightStripe, 4, hMenu, 14)
     
     y += 20
     xIn := xRight + 20
@@ -1167,8 +1179,8 @@ BuildMainGui() {
 
     global NavItems := []
     global NavActive := 1
-    navLabels := ["Главная", "Бинды", "Настройки", "Статистика", "Справка"]
-    navW := 112
+    navLabels := ["🏠 Главная", "📋 Бинды", "⚙️ Настройки", "📊 Статистика", "❓ Справка"]
+    navW := 128
     navH := 28
     navY := 56
     navX := 20
