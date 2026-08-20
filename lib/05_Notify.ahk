@@ -5,104 +5,100 @@
 ; ВНИМАНИЕ: этот файл — МОДУЛЬ. Не запускайте его отдельно,
 ; он подключается через #Include из google.ahk
 ;
-class Notify {
-    static gui := ""
-    static phase := ""        ; "in" | "hold" | "out"
-    static step := 0
-    static baseX := 0
-    static baseY := 0
-    static hideTimer := ""
+; Уведомления на обычных функциях (не классах): статические методы
+; класса нельзя передавать в SetTimer как callback в AHK v2 —
+; это даёт «Invalid callback function».
+;
+global NotifyGui := ""
+global NotifyPhase := ""       ; "in" | "hold" | "out"
+global NotifyStep := 0
+global NotifyBaseX := 0
+global NotifyBaseY := 0
 
-    static Show(text, type := "info", duration := 2000) {
-        Notify.Hide()
+ShowNotify(text, type := "info", duration := 2000) {
+    global NotifyGui, NotifyPhase, NotifyStep, NotifyBaseX, NotifyBaseY, THEME
+    HideNotify()
 
-        color := THEME["accent"]
-        switch type {
-            case "success": color := THEME["success"]
-            case "error": color := THEME["error"]
-            case "warning": color := THEME["warning"]
-        }
-
-        Notify.gui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "Notify")
-        Notify.gui.BackColor := THEME["bg"]
-        Notify.gui.MarginX := 0
-        Notify.gui.MarginY := 0
-        Notify.gui.AddText("x0 y0 w5 h50 Background" color)
-        Notify.gui.SetFont("s10", "Segoe UI")
-        Notify.gui.AddText("x18 y15 w300 c" THEME["text"] " BackgroundTrans", text)
-
-        Notify.baseX := A_ScreenWidth - 340
-        Notify.baseY := A_ScreenHeight - 110
-        Notify.gui.Show("x" Notify.baseX " y" (Notify.baseY + 16) " w320 h50 NA")
-        WinSetTransparent(0, Notify.gui)
-
-        ; Плавное появление (fade-in + подъём)
-        Notify.phase := "in"
-        Notify.step := 0
-        SetTimer(Notify.Tick, 12)
-
-        ; Авто-скрытие после паузы
-        if Notify.hideTimer
-            SetTimer(Notify.hideTimer, 0)
-        Notify.hideTimer := (*) => Notify.StartHide()
-        SetTimer(Notify.hideTimer, -duration)
+    color := THEME["accent"]
+    switch type {
+        case "success": color := THEME["success"]
+        case "error": color := THEME["error"]
+        case "warning": color := THEME["warning"]
     }
 
-    static StartHide() {
-        if Notify.gui && Notify.phase != "out" {
-            Notify.phase := "out"
-            Notify.step := 0
-        }
+    NotifyGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "Notify")
+    NotifyGui.BackColor := THEME["bg"]
+    NotifyGui.MarginX := 0
+    NotifyGui.MarginY := 0
+    NotifyGui.AddText("x0 y0 w5 h50 Background" color)
+    NotifyGui.SetFont("s10", "Segoe UI")
+    NotifyGui.AddText("x18 y15 w300 c" THEME["text"] " BackgroundTrans", text)
+
+    NotifyBaseX := A_ScreenWidth - 340
+    NotifyBaseY := A_ScreenHeight - 110
+    NotifyGui.Show("x" NotifyBaseX " y" (NotifyBaseY + 16) " w320 h50 NA")
+    WinSetTransparent(0, NotifyGui)
+
+    ; Плавное появление (fade-in + подъём)
+    NotifyPhase := "in"
+    NotifyStep := 0
+    SetTimer(NotifyTick, 12)
+
+    ; Авто-скрытие после паузы (однократный таймер)
+    SetTimer(NotifyAutoHide, -duration)
+}
+
+HideNotify() {
+    global NotifyGui, NotifyPhase
+    SetTimer(NotifyTick, 0)
+    SetTimer(NotifyAutoHide, 0)
+    try {
+        if NotifyGui
+            NotifyGui.Destroy()
+        NotifyGui := ""
     }
+    NotifyPhase := ""
+}
 
-    static Tick() {
-        if !Notify.gui {
-            SetTimer(Notify.Tick, 0)
-            return
-        }
-        steps := 8
-        Notify.step++
-        t := Min(1, Notify.step / steps)
-        e := 1 - (1 - t) ** 3     ; ease-out — плавно и без рывков
-
-        if Notify.phase = "in" {
-            alpha := Round(240 * e)
-            y := Round(Notify.baseY + 16 * (1 - e))
-            try WinSetTransparent(alpha, Notify.gui)
-            try Notify.gui.Move(Notify.baseX, y)
-            if t >= 1 {
-                Notify.phase := "hold"
-                Notify.step := 0
-            }
-        } else if Notify.phase = "out" {
-            alpha := Round(240 * (1 - e))
-            y := Round(Notify.baseY + 10 * e)
-            try WinSetTransparent(alpha, Notify.gui)
-            try Notify.gui.Move(Notify.baseX, y)
-            if t >= 1 {
-                SetTimer(Notify.Tick, 0)
-                try Notify.gui.Destroy()
-                Notify.gui := ""
-                Notify.phase := ""
-            }
-        }
-    }
-
-    static Hide() {
-        if Notify.hideTimer
-            SetTimer(Notify.hideTimer, 0)
-        SetTimer(Notify.Tick, 0)
-        try {
-            if Notify.gui
-                Notify.gui.Destroy()
-            Notify.gui := ""
-        }
-        Notify.phase := ""
+NotifyAutoHide() {
+    global NotifyGui, NotifyPhase, NotifyStep
+    if NotifyGui && NotifyPhase != "out" {
+        NotifyPhase := "out"
+        NotifyStep := 0
     }
 }
 
-ShowNotify(text, type := "info", duration := 2000) {
-    Notify.Show(text, type, duration)
+NotifyTick() {
+    global NotifyGui, NotifyPhase, NotifyStep, NotifyBaseX, NotifyBaseY
+    if !NotifyGui {
+        SetTimer(NotifyTick, 0)
+        return
+    }
+    NotifyStep++
+    t := Min(1, NotifyStep / 8)
+    e := 1 - (1 - t) ** 3     ; ease-out — плавно и без рывков
+
+    if NotifyPhase = "in" {
+        alpha := Round(240 * e)
+        y := Round(NotifyBaseY + 16 * (1 - e))
+        try WinSetTransparent(alpha, NotifyGui)
+        try NotifyGui.Move(NotifyBaseX, y)
+        if t >= 1 {
+            NotifyPhase := "hold"
+            NotifyStep := 0
+        }
+    } else if NotifyPhase = "out" {
+        alpha := Round(240 * (1 - e))
+        y := Round(NotifyBaseY + 10 * e)
+        try WinSetTransparent(alpha, NotifyGui)
+        try NotifyGui.Move(NotifyBaseX, y)
+        if t >= 1 {
+            SetTimer(NotifyTick, 0)
+            try NotifyGui.Destroy()
+            NotifyGui := ""
+            NotifyPhase := ""
+        }
+    }
 }
 
 
@@ -116,4 +112,3 @@ ShowNotify(text, type := "info", duration := 2000) {
 ; 1. Оверлей видим
 ; 2. Мы НЕ вводим ID в оверлее (overlayInputMode = false)
 ; 3. Чат ЗАКРЫТ (IsChatActive = false)
-
