@@ -491,6 +491,8 @@ BuildMainGui() {
         for ctrl in SettingGroups[tabName] {
             try ctrl.Visible := true
         }
+        ; Полная перерисовка — убирает артефакты/обводки от скрытых контролов
+        try WinRedraw("ahk_id " MainGui.Hwnd)
     }
     
     
@@ -553,7 +555,7 @@ BuildMainGui() {
     
     y += 90
     MainGui.SetFont("s10 norm", "Segoe UI")
-    c1 := MainGui.AddCheckbox("x" x " y" y " vSettingsOnlyGTA c" THEME["text"] " BackgroundTrans" " Checked" (CFG["onlyGTA"] ? 1 : 0), " Работа только при активном окне GTA")
+    c1 := MainGui.AddCheckbox("x" x " y" y " vSettingsOnlyGTA c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["onlyGTA"] ? 1 : 0), " Работа только при активном окне GTA")
     AddToGroup("General", c1)
     c1.OnEvent("Click", (*) => CheckSettingsDirty())
     
@@ -566,19 +568,19 @@ BuildMainGui() {
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    c2 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifySms c" THEME["text"] " BackgroundTrans" " Checked" (CFG["notifySms"] ? 1 : 0), " Всплывающее SMS (если игра свернута)")
+    c2 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifySms c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifySms"] ? 1 : 0), " Всплывающее SMS (если игра свернута)")
     AddToGroup("Notify", c2)
     c2.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c3 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyMention c" THEME["text"] " BackgroundTrans" " Checked" (CFG["notifyMention"] ? 1 : 0), " Звук при упоминании вашего ника в чате")
+    c3 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyMention c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifyMention"] ? 1 : 0), " Звук при упоминании вашего ника в чате")
     AddToGroup("Notify", c3)
     c3.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c4 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyKeywords c" THEME["text"] " BackgroundTrans" " Checked" (CFG["notifyKeywords"] ? 1 : 0), " Реагировать на просьбы (врач, лечи, таблетку)")
+    c4 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyKeywords c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifyKeywords"] ? 1 : 0), " Реагировать на просьбы (врач, лечи, таблетку)")
     AddToGroup("Notify", c4)
     c4.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c5 := MainGui.AddCheckbox("x" x " y" y " vSettingsConfirmDelete c" THEME["text"] " BackgroundTrans" " Checked" (EditorConfirmDelete ? 1 : 0), " Спрашивать подтверждение при удалении строк")
+    c5 := MainGui.AddCheckbox("x" x " y" y " vSettingsConfirmDelete c" THEME["text"] " Background" THEME["bgLight"] " Checked" (EditorConfirmDelete ? 1 : 0), " Спрашивать подтверждение при удалении строк")
     AddToGroup("Notify", c5)
     c5.OnEvent("Click", (*) => CheckSettingsDirty())
     
@@ -621,7 +623,7 @@ BuildMainGui() {
     AddToGroup("Timing", bSlow.ctrl)
     
     y += 45
-    cAutoSave := MainGui.AddCheckbox("x" x " y" y " vSettingsEditorAutoSave c" THEME["text"] " BackgroundTrans" " Checked" (CFG["editorAutoSaveDelay"] ? 1 : 0), " Авто-сохранение задержки в редакторе (без галочки)")
+    cAutoSave := MainGui.AddCheckbox("x" x " y" y " vSettingsEditorAutoSave c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["editorAutoSaveDelay"] ? 1 : 0), " Авто-сохранение задержки в редакторе (без галочки)")
     AddToGroup("Timing", cAutoSave)
     cAutoSave.OnEvent("Click", (*) => CheckSettingsDirty())
     
@@ -630,7 +632,7 @@ BuildMainGui() {
     slVal := MainGui.AddText("x" (x+300) " y" y " w100 Right c" THEME["accent"] " vOpacityDisplay BackgroundTrans", CFG["overlayOpacity"])
     AddToGroup("Timing", slVal)
     y += 25
-    sl := MainGui.AddSlider("x" x " y" y " w420 h30 vSettingsOverlayOpacity Range100-255 AltSubmit" " BackgroundTrans", CFG["overlayOpacity"])
+    sl := MainGui.AddSlider("x" x " y" y " w420 h30 vSettingsOverlayOpacity Range100-255 AltSubmit" " Background" THEME["bgLight"], CFG["overlayOpacity"])
     AddToGroup("Timing", sl)
     sl.OnEvent("Change", (ctrl, *) => (
         MainGui["OpacityDisplay"].Text := ctrl.Value,
@@ -734,7 +736,7 @@ BuildMainGui() {
     y += 40
     MainGui.SetFont("s11 bold", "Segoe UI")
     ; Чекбокс
-    cScr := MainGui.AddCheckbox("x" x " y" y " vSettingsAutoScreen c" THEME["success"] " BackgroundTrans" " Checked" (CFG["autoScreen"] ? 1 : 0), " Включить авто-сортировку (Smart Sort)")
+    cScr := MainGui.AddCheckbox("x" x " y" y " vSettingsAutoScreen c" THEME["success"] " Background" THEME["bgLight"] " Checked" (CFG["autoScreen"] ? 1 : 0), " Включить авто-сортировку (Smart Sort)")
     AddToGroup("Screenshots", cScr)
     cScr.OnEvent("Click", (*) => CheckSettingsDirty())
     
@@ -874,6 +876,8 @@ BuildMainGui() {
         for ctrl in StatGroups[tabName] {
             try ctrl.Visible := true
         }
+        ; Полная перерисовка — убирает артефакты/обводки от скрытых контролов
+        try WinRedraw("ahk_id " MainGui.Hwnd)
     }
     
     ; --- ПРАВАЯ ОБЛАСТЬ ---
@@ -1043,6 +1047,8 @@ BuildMainGui() {
         for ctrl in HelpGroups[tabName] {
             try ctrl.Visible := true
         }
+        ; Полная перерисовка — убирает артефакты/обводки от скрытых контролов
+        try WinRedraw("ahk_id " MainGui.Hwnd)
     }
     
     ; --- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ (МЕНЯЮЩИЙСЯ КОНТЕНТ) ---
@@ -1107,16 +1113,32 @@ BuildMainGui() {
     
     ; === 3. О ПРОГРАММЕ ===
     y := yStart + 20
-    MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["text"] " BackgroundTrans", "О программе"))
-    y += 50
+    MainGui.SetFont("s16 bold", "Segoe UI")
+    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["accent"] " BackgroundTrans", "О программе"))
+    y += 40
+    
+    ; Лого-блок: плитка с крестом + крупное название биндера
+    logo := MainGui.AddText("x" x " y" y " w56 h56 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["error"], "✚")
+    logo.SetFont("s26", "Segoe UI Symbol")
+    RoundCorners(logo, 56, 56, 14)
+    AddToHelp("About", logo)
+    
+    MainGui.SetFont("s26 bold", "Segoe UI")
+    AddToHelp("About", MainGui.AddText("x" (x+70) " y" (y+4) " w280 c" THEME["text"] " BackgroundTrans", "Doctor Binder"))
+    MainGui.SetFont("s11", "Segoe UI")
+    AddToHelp("About", MainGui.AddText("x" (x+72) " y" (y+38) " w280 c" THEME["textDim"] " BackgroundTrans", "v" VERSION "  •  " AUTHOR))
+    
+    y += 78
+    sepAbout := MainGui.AddText("x" x " y" y " w350 h2 Background" THEME["border"], "")
+    AddToHelp("About", sepAbout)
+    y += 20
     MainGui.SetFont("s10", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"], "Версия: " VERSION))
-    y += 30
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"], "Автор: " AUTHOR))
-    y += 30
+    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Версия: " VERSION))
+    y += 28
+    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Автор: " AUTHOR))
+    y += 28
     AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Год: 2026"))
-    y += 50
+    y += 40
     MainGui.SetFont("s9 italic", "Segoe UI")
     AddToHelp("About", MainGui.AddText("x" x " y" y " w350 h100 c" THEME["textDim"] " BackgroundTrans", "Разработано специально для медицинского сообщества SAMP ABS RP"))
     
