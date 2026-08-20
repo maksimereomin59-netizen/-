@@ -72,6 +72,8 @@ class StyledBtn {
 
         ; Плавный переход цвета фона
         this.AnimateBg(state ? this.colors.hover : this.colors.bg)
+        ; Курсор-«палец» при наведении, стрелка при уходе
+        DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
     }
     AnimateBg(target) {
         this._target := target
@@ -134,22 +136,21 @@ CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip :
 }
 
 ; ───────────────────────────────────────────────────────────────────────────────
-; СОВРЕМЕННЫЕ КОНТУРНЫЕ КНОПКИ (outline style)
-; Прозрачный фон + скруглённая обводка (2 слоя: рамка-подложка скруглена через
-; RoundCorners, текст — на прозрачном фоне). При наведении кнопка «загорается»
-; заливкой цвета обводки, при нажатии — вдавливается. Никаких чёрных
-; прямоугольников и пиксельных заливок.
+; СОВРЕМЕННЫЕ СКРУГЛЁННЫЕ КНОПКИ (rounded + заливка)
+; Залитая цветная подложка со скруглёнными углами (RoundCorners) + текст на
+; прозрачном фоне. При наведении кнопка подсвечивается более ярким цветом и
+; курсор становится «пальцем» (IDC_HAND), при нажатии — вдавливается.
 ; ───────────────────────────────────────────────────────────────────────────────
 CreateOutlineBtn(parent, x, y, w, h, text, callback, style := "default", tip := "") {
     global THEME, HoverButtons
     c := OutlineColors(style)
-    radius := Min(12, (h + 2) // 2 - 1)
+    radius := Min(12, (h + 2) // 2)   ; скругление: до полной «пилюли» на малых кнопках
 
-    ; Слой 1 — скруглённая подложка-обводка (на 2px больше кнопки)
-    frame := parent.AddText("x" (x-1) " y" (y-1) " w" (w+2) " h" (h+2) " Background" c.border, "")
-    RoundCorners(frame, w + 2, h + 2, radius)
+    ; Слой 1 — скруглённая подложка с заливкой
+    frame := parent.AddText("x" x " y" y " w" w " h" h " Background" c.bg, "")
+    RoundCorners(frame, w, h, radius)
 
-    ; Слой 2 — текст на прозрачном фоне (поверх обводки)
+    ; Слой 2 — текст на прозрачном фоне (поверх заливки)
     btn := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" c.text, text)
     btn.SetFont("s9 bold", "Segoe UI")
 
@@ -163,21 +164,20 @@ CreateOutlineBtn(parent, x, y, w, h, text, callback, style := "default", tip := 
     btn.OnEvent("Click", (*) => OutlinePress(obj))
     frame.OnEvent("Click", (*) => OutlinePress(obj))
 
-    ; Оба слоя отслеживаются ховером (текст и рамка — один объект состояния)
+    ; Оба слоя отслеживаются ховером (текст и подложка — один объект состояния)
     HoverButtons.Push({ctrl: btn, parent: parent, isClickable: true, SetHover: (o, s) => OutlineSetHover(obj, s)})
     HoverButtons.Push({ctrl: frame, parent: parent, isClickable: true, SetHover: (o, s) => OutlineSetHover(obj, s)})
     return obj
 }
 
 OutlineColors(style) {
-    global THEME
     style := StrLower(style)
     switch style {
-        case "success": return {border: THEME["successDark"], fill: THEME["success"], text: THEME["success"], hoverText: THEME["bg"]}
-        case "danger":  return {border: THEME["errorDark"],   fill: THEME["error"],   text: THEME["error"],   hoverText: THEME["bg"]}
-        case "info":    return {border: THEME["accentDark"],  fill: THEME["accent"],  text: THEME["accentLight"], hoverText: THEME["bg"]}
-        case "warning": return {border: THEME["warningDark"], fill: THEME["warning"], text: THEME["warning"], hoverText: THEME["bg"]}
-        default:        return {border: THEME["borderLight"], fill: THEME["bgSelected"], text: THEME["textDim"], hoverText: THEME["text"]}
+        case "success": return {bg: "365e3d", hover: "4d8a58", text: "ffffff"}
+        case "danger":  return {bg: "6e2e36", hover: "933c47", text: "ffffff"}
+        case "info":    return {bg: "2e3b6e", hover: "42539c", text: "ffffff"}
+        case "warning": return {bg: "6e5b2e", hover: "8f7636", text: "ffffff"}
+        default:        return {bg: "2b2b3b", hover: "45475a", text: "cdd6f4"}
     }
 }
 
@@ -189,27 +189,28 @@ OutlineSetHover(obj, state) {
     obj["state"]["hovered"] := state
     c := obj["colors"]
     if state {
-        obj["frame"].Opt("Background" c.fill)
-        obj["ctrl"].Opt("c" c.hoverText)
+        ; Подсветка: подложка становится ярче
+        obj["frame"].Opt("Background" c.hover)
         if obj["tip"] != ""
             ToolTip(obj["tip"], , , 1000)
     } else {
-        obj["frame"].Opt("Background" c.border)
-        obj["ctrl"].Opt("c" c.text)
+        obj["frame"].Opt("Background" c.bg)
         ToolTip(, , , 1000)
     }
     obj["frame"].Redraw()
     obj["ctrl"].Redraw()
+    ; Курсор-«палец» при наведении, стрелка при уходе
+    DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
 }
 
 OutlinePress(obj) {
     if !obj["isClickable"]
         return
     ; Вдавливание: оба слоя смещаются на +1,+1
-    obj["frame"].Move(obj["x"], obj["y"])
+    obj["frame"].Move(obj["x"] + 1, obj["y"] + 1)
     obj["ctrl"].Move(obj["x"] + 1, obj["y"] + 1)
     Sleep(70)
-    obj["frame"].Move(obj["x"] - 1, obj["y"] - 1)
+    obj["frame"].Move(obj["x"], obj["y"])
     obj["ctrl"].Move(obj["x"], obj["y"])
     Sleep(20)
     obj["callback"].Call()
@@ -370,7 +371,9 @@ CreateClearBtn(parent, x, y, size, callback) {
         isClickable: true,
         SetHover: (thisObj, state) => (
             btn.Opt("c" (state ? "ff3333" : THEME["textMuted"])),
-            btn.Redraw()
+            btn.Redraw(),
+            ; Курсор-«палец» при наведении
+            DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
         )
     })
     
