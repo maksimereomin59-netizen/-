@@ -256,8 +256,7 @@ BuildMainGui() {
     ; Карточка списка
     cardList := PageCtrl(MainGui.AddText("x20 y" yStart " w" wList " h500 Background" THEME["bgLight"], ""))
     RoundCorners(cardList, wList, 500, 14)
-        RoundCorners(stripeList, 4, 500, 14)
-    
+        
     ; --- ПАНЕЛЬ ИНСТРУМЕНТОВ (TOOLBAR) ---
     yTool := yStart + 15
     xTool := 40
@@ -354,8 +353,7 @@ BuildMainGui() {
     ; Карточка действий
     cardActions := PageCtrl(MainGui.AddText("x" xRight " y" yStart " w" wRight " h500 Background" THEME["bgLight"], ""))
     RoundCorners(cardActions, wRight, 500, 14)
-        RoundCorners(stripeActions, 4, 500, 14)
-    
+        
     MainGui.SetFont("s12 bold", "Segoe UI")
     PageCtrl(MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"] " BackgroundTrans", "Действия"))
     PageCtrl(MainGui.AddText("x" (xRight+20) " y" (yStart+45) " w" (wRight-40) " h2 Background" THEME["border"], ""))
@@ -491,7 +489,6 @@ BuildMainGui() {
     contentPanel := PageCtrl(MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(contentPanel, wContent, hMenu, 14)
     ; Декоративная линия слева от контента
-    RoundCorners(contentLine, 2, hMenu, 14)
     
     AddToGroup(group, ctrl) {
         SettingGroups[group].Push(ctrl)
@@ -1131,8 +1128,7 @@ BuildMainGui() {
     ; Фон правой панели
     rightPanel := PageCtrl(MainGui.AddText("x" xRight " y" y " w" wRight " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(rightPanel, wRight, hMenu, 14)
-        RoundCorners(rightStripe, 4, hMenu, 14)
-    
+        
     y += 20
     xIn := xRight + 20
     
