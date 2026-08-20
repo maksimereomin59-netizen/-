@@ -101,6 +101,10 @@ global STATS := Map("totalSent", 0, "patientsHealed", 0, "pillsGiven", 0, "injec
 
 global HoverButtons := [], SLOTS := [], UndoHistory := [], FILTERS := Map()
 global MainGui := "", OverlayGui := "", EditorGui := "", FilterMenuGui := "", FilterEditorGui := "", ContextMenuGui := ""
+; Система страниц главного окна (инициализируется заранее: PageCtrl вызывается
+; уже при создании заголовка окна, до остальных присваиваний в BuildMainGui)
+global PageGroups := Map()
+global PageCur := 0   ; 0 = контролы вне страниц (шапка, навигация)
 global g_BtnSaveProfile := "", g_BtnSaveSettings := "", g_BtnGlobalSave := ""
 global CurrentSearch := "", CurrentFilter := "", CurrentIdFormat := ""
 global OverlayVisible := false, ChatIsOpen := false
