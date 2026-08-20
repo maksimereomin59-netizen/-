@@ -43,18 +43,18 @@ ShowCustomBindMenu(slotIdx, mouseX, mouseY) {
     menuItems := []
     
     if (slot["name"] != "" && slot["lines"].Length > 0) {
-        menuItems.Push(Map("text", "⚡ Запустить", "action", "run", "color", THEME["success"]))
-        menuItems.Push(Map("text", "✏️ Редактировать", "action", "edit", "color", THEME["text"]))
-        menuItems.Push(Map("text", "📋 Копировать", "action", "copy", "color", THEME["text"]))
-        menuItems.Push(Map("text", "🔑 Изменить клавишу", "action", "hotkey", "color", THEME["text"]))
+        menuItems.Push(Map("text", "Запустить", "action", "run", "color", THEME["success"]))
+        menuItems.Push(Map("text", "Редактировать", "action", "edit", "color", THEME["text"]))
+        menuItems.Push(Map("text", "Копировать", "action", "copy", "color", THEME["text"]))
+        menuItems.Push(Map("text", "Изменить клавишу", "action", "hotkey", "color", THEME["text"]))
         
-        statusText := slot["enabled"] ? "⏸️ Отключить" : "▶️ Включить"
+        statusText := slot["enabled"] ? "Отключить" : "Включить"
         statusColor := slot["enabled"] ? THEME["warning"] : THEME["success"]
         menuItems.Push(Map("text", statusText, "action", "toggle", "color", statusColor))
         
-        menuItems.Push(Map("text", "🗑️ Удалить", "action", "delete", "color", THEME["error"]))
+        menuItems.Push(Map("text", "Удалить", "action", "delete", "color", THEME["error"]))
     } else {
-        menuItems.Push(Map("text", "➕ Создать здесь", "action", "edit", "color", THEME["success"]))
+        menuItems.Push(Map("text", "Создать здесь", "action", "edit", "color", THEME["success"]))
     }
     
     for item in menuItems {

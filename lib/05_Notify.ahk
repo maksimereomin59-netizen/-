@@ -19,6 +19,10 @@ ShowNotify(text, type := "info", duration := 2000) {
     global NotifyGui, NotifyPhase, NotifyStep, NotifyBaseX, NotifyBaseY, THEME
     HideNotify()
 
+    ; Убираем эмодзи из текста: в GDI-рендере они превращаются в чёрные
+    ; силуэты/квадраты — текст уведомления должен оставаться чистым
+    try text := RegExReplace(text, "[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]", "")
+
     color := THEME["accent"]
     switch type {
         case "success": color := THEME["success"]
@@ -37,6 +41,11 @@ ShowNotify(text, type := "info", duration := 2000) {
     NotifyBaseX := A_ScreenWidth - 340
     NotifyBaseY := A_ScreenHeight - 110
     NotifyGui.Show("x" NotifyBaseX " y" (NotifyBaseY + 16) " w320 h50 NA")
+    ; Скруглённые углы окна уведомления
+    try {
+        hrgn := DllCall("gdi32\CreateRoundRectRgn", "Int", 0, "Int", 0, "Int", 321, "Int", 51, "Int", 12, "Int", 12, "Ptr")
+        DllCall("user32\SetWindowRgn", "Ptr", NotifyGui.Hwnd, "Ptr", hrgn, "Int", 1)
+    }
     WinSetTransparent(0, NotifyGui)
 
     ; Плавное появление (fade-in + подъём)

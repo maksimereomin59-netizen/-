@@ -123,7 +123,7 @@ ShowFilterMenu(*) {
     w := 240
     
     FilterMenuGui.SetFont("s10 bold", "Segoe UI")
-    FilterMenuGui.AddText("x16 y" y " w" (w-32) " c" THEME["accent"] " BackgroundTrans", "🔍 Фильтры")
+    FilterMenuGui.AddText("x16 y" y " w" (w-32) " c" THEME["accent"] " BackgroundTrans", "Фильтры")
     y += 32
     
     FilterMenuGui.AddText("x12 y" y " w" (w-24) " h2 Background" THEME["borderGlow"], "")
@@ -163,8 +163,8 @@ ShowFilterMenu(*) {
     y += 14
     
     ; ✅ Используем класс StyledBtn вместо несуществующей функции
-    StyledBtn(FilterMenuGui, 16, y, 100, 36, "➕ Создать", (*) => (FilterMenuGui.Destroy(), CreateNewFilter()), "success")
-    StyledBtn(FilterMenuGui, 124, y, 100, 36, "✏️ Изменить", (*) => (FilterMenuGui.Destroy(), EditFilters()), "default")
+    StyledBtn(FilterMenuGui, 16, y, 100, 36, "Создать", (*) => (FilterMenuGui.Destroy(), CreateNewFilter()), "success")
+    StyledBtn(FilterMenuGui, 124, y, 100, 36, "Изменить", (*) => (FilterMenuGui.Destroy(), EditFilters()), "default")
     y += 48
     
     SetTimer((*) => FilterMenuCheckHover(filterItems), 50)
@@ -251,8 +251,8 @@ EditFilters() {
         lv.Add("", filter["name"], filter["condition"], typeText)
     }
     
-    CreateStyledButton(FilterEditorGui, 20, 370, 110, 36, "➕ Создать", (*) => CreateNewFilter(), "success")
-    CreateStyledButton(FilterEditorGui, 140, 370, 110, 36, "🗑️ Удалить", (*) => DeleteSelectedFilter(), "danger")
+    CreateStyledButton(FilterEditorGui, 20, 370, 110, 36, "Создать", (*) => CreateNewFilter(), "success")
+    CreateStyledButton(FilterEditorGui, 140, 370, 110, 36, "Удалить", (*) => DeleteSelectedFilter(), "danger")
     CreateStyledButton(FilterEditorGui, 260, 370, 110, 36, "Закрыть", (*) => FilterEditorGui.Destroy(), "default")
     
     FilterEditorGui.Show("w500 h425")
@@ -348,7 +348,7 @@ ApplyModernFilter(name) {
         FilterPopupGui := ""
     }
     
-    btnFilterDisplay.ctrl.Text := "🔍 Фильтр: " name " ▼"
+    btnFilterDisplay.ctrl.Text := "Фильтр: " name " ▼"
     RefreshBindList(name)
 }
 

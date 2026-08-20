@@ -58,7 +58,7 @@ ApplyAndSaveSettings(*) {
     ; === 5. СБРОС КНОПКИ (УСПЕХ) ===
     if g_BtnSaveSettings {
         UpdateButtonState(g_BtnSaveSettings, false)
-        g_BtnSaveSettings.ctrl.Text := "✅ Сохранено"
+        g_BtnSaveSettings.ctrl.Text := "Сохранено"
         g_BtnSaveSettings.ctrl.Redraw()
         
         ; Через 1.5 сек возвращаем обычный текст
@@ -75,7 +75,7 @@ ApplyAndSaveSettings(*) {
 RestoreSettingsBtnText() {
     global g_BtnSaveSettings, THEME
     if g_BtnSaveSettings {
-        g_BtnSaveSettings.ctrl.Text := "💾 Сохранить изменения"
+        g_BtnSaveSettings.ctrl.Text := "Сохранить изменения"
         g_BtnSaveSettings.ctrl.Opt("Background" THEME["btnBg"])
         g_BtnSaveSettings.ctrl.Redraw()
     }
@@ -143,7 +143,7 @@ SaveEverything() {
     if g_BtnGlobalSave {
         ; Выключаем кнопку (делаем серой)
         UpdateButtonState(g_BtnGlobalSave, false)
-        g_BtnGlobalSave.ctrl.Text := "✅ ДАННЫЕ СОХРАНЕНЫ"
+        g_BtnGlobalSave.ctrl.Text := "Данные сохранены"
         
         ; Через 2 секунды возвращаем обычный текст
         SetTimer(() => TryRestoreButtonText(), -2000)
@@ -156,7 +156,7 @@ SaveEverything() {
 TryRestoreButtonText() {
     global g_BtnGlobalSave, GlobalUnsavedChanges
     if IsObject(g_BtnGlobalSave) && !GlobalUnsavedChanges
-        g_BtnGlobalSave.ctrl.Text := "💾 СОХРАНИТЬ ВСЕ ИЗМЕНЕНИЯ"
+        g_BtnGlobalSave.ctrl.Text := "Сохранить все изменения"
 }
 
 
@@ -689,7 +689,7 @@ DeleteScreenRule() {
     try {
         if g_BtnSaveSettings {
             g_BtnSaveSettings.isClickable := true
-            g_BtnSaveSettings.ctrl.Text := "💾 Сохранить изменения (!)"
+            g_BtnSaveSettings.ctrl.Text := "Сохранить изменения (!)"
             g_BtnSaveSettings.ctrl.Opt("Background" THEME["btnPrimary"] " cffffff")
             g_BtnSaveSettings.ctrl.Redraw()
         }
@@ -727,7 +727,7 @@ SaveRuleFromGui(gui, editIndex) {
     try {
         if g_BtnSaveSettings {
             g_BtnSaveSettings.isClickable := true
-            g_BtnSaveSettings.ctrl.Text := "💾 Сохранить изменения (!)"
+            g_BtnSaveSettings.ctrl.Text := "Сохранить изменения (!)"
             g_BtnSaveSettings.ctrl.Opt("Background" THEME["btnPrimary"] " cffffff")
             g_BtnSaveSettings.ctrl.Redraw()
         }
@@ -768,7 +768,7 @@ ShowRuleEditor(editIndex := 0) {
     ; --- ШАПКА ---
     RuleEditorGui.AddText("x0 y0 w" w " h40 Background" THEME["bgLight"], "")
     RuleEditorGui.SetFont("s11 bold", "Segoe UI")
-    RuleEditorGui.AddText("x20 y10 w300 c" THEME["accent"] " BackgroundTrans", "📷 " titleText)
+    RuleEditorGui.AddText("x20 y10 w300 c" THEME["accent"] " BackgroundTrans", titleText)
     
     ; Кнопка закрытия
     CloseBtn := RuleEditorGui.AddText("x" (w-40) " y0 w40 h40 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
@@ -800,14 +800,14 @@ ShowRuleEditor(editIndex := 0) {
     RuleEditorGui.AddEdit("x" x " y" (y+25) " w" (inputW-50) " h32 ReadOnly vRulePath Background" THEME["bgHighlight"] " c" THEME["textDim"], data["path"])
     
     ; Кнопка папки
-    CreateStyledButton(RuleEditorGui, x+inputW-40, y+25, 40, 32, "📂", (*) => BrowseRuleFolder(RuleEditorGui), "info")
+    CreateStyledButton(RuleEditorGui, x+inputW-40, y+25, 40, 32, "⋯", (*) => BrowseRuleFolder(RuleEditorGui), "info")
     
     ; --- ПОДВАЛ ---
     y += 85
     RuleEditorGui.AddText("x20 y" (y-15) " w" (w-40) " h2 Background" THEME["borderGlow"], "")
     
-    CreateStyledButton(RuleEditorGui, 20, y, 190, 40, "💾 Сохранить", (*) => SaveRuleFromGui(RuleEditorGui, editIndex), "success")
-    CreateStyledButton(RuleEditorGui, 230, y, 190, 40, "❌ Отмена", (*) => RuleEditorGui.Destroy(), "danger")
+    CreateStyledButton(RuleEditorGui, 20, y, 190, 40, "Сохранить", (*) => SaveRuleFromGui(RuleEditorGui, editIndex), "success")
+    CreateStyledButton(RuleEditorGui, 230, y, 190, 40, "Отмена", (*) => RuleEditorGui.Destroy(), "danger")
     
     ; Центрирование
     RuleEditorGui.Show("w" w " h" h)

@@ -96,7 +96,7 @@ OpenBindEditor(slotNum) {
     
     EditorGui.SetFont("s9", "Segoe UI")
     EditorGui.AddText("x" xIn " y" (yRow-12) " w120 c" THEME["textDim"] " Background" THEME["bgLight"], "В статистику")
-    EditorGui.AddDropDownList("x" xIn " y" (yRow+8) " w120 vEditorStatTypeVisible Choose1 Background" THEME["bgHighlight"] " c" THEME["text"], ["—", "💊 Таблетки", "💉 Уколы", "🔪 Операции", "📋 Медкарты", "🛡 Вакцины"])
+    EditorGui.AddDropDownList("x" xIn " y" (yRow+8) " w120 vEditorStatTypeVisible Choose1 Background" THEME["bgHighlight"] " c" THEME["text"], ["—", "Таблетки", "Уколы", "Операции", "Медкарты", "Вакцины"])
     EditorGui.AddDropDownList("x0 y0 w0 Hidden vEditorStatType Choose1", ["", "pills", "inject", "operation", "medcheck", "vaccine"])
     SetEditorDropdowns(slot)
     SetEditorStatTypeVisible(slot)
@@ -115,7 +115,7 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x" xCard " y" yMain " w4 h" mainH " Background" THEME["accent"], "")
     
     EditorGui.SetFont("s11 bold", "Segoe UI")
-    EditorGui.AddText("x" (xCard+20) " y" (yMain+15) " w200 c" THEME["accent"] " Background" THEME["bgLight"], "📜 СПИСОК СТРОК")
+    EditorGui.AddText("x" (xCard+20) " y" (yMain+15) " w200 c" THEME["accent"] " Background" THEME["bgLight"], "Список строк")
     EditorGui.SetFont("s9", "Segoe UI")
     EditorGui.AddText("x" (xCard+leftW-120) " y" (yMain+18) " w100 Right c" THEME["textDim"] " Background" THEME["bgLight"] " vEditorLineCount", slot["lines"].Length " строк")
     
@@ -210,10 +210,10 @@ OpenBindEditor(slotNum) {
     ; --- ПОДВАЛ ---
     yFooter := yMain + mainH + 15
     EditorGui.AddText("x20 y" (yFooter-5) " w" (totalW-40) " h2 Background" THEME["borderGlow"], "")
-    CreateOutlineBtn(EditorGui, 20, yFooter, 220, 45, "СОХРАНИТЬ", (*) => SaveModernEditor(), "success")
+    CreateOutlineBtn(EditorGui, 20, yFooter, 220, 45, "Сохранить", (*) => SaveModernEditor(), "success")
     EditorGui.SetFont("s9 italic", "Segoe UI")
     EditorGui.AddText("x260 y" (yFooter+15) " w480 Center c" THEME["textMuted"] " BackgroundTrans", "Все изменения применяются только после нажатия кнопки Сохранить")
-    CreateOutlineBtn(EditorGui, totalW-200, yFooter, 180, 45, "ОТМЕНА", (*) => SafeCloseEditor(), "danger")
+    CreateOutlineBtn(EditorGui, totalW-200, yFooter, 180, 45, "Отмена", (*) => SafeCloseEditor(), "default")
     
     if (lv.GetCount() > 0) {
         lv.Modify(1, "Select Focus")
@@ -574,10 +574,10 @@ SafeCloseEditor() {
         if g_BtnGlobalSave {
             if GlobalUnsavedChanges {
                 UpdateButtonState(g_BtnGlobalSave, true, "warning")
-                g_BtnGlobalSave.ctrl.Text := "💾 СОХРАНИТЬ ВСЕ ИЗМЕНЕНИЯ (!)"
+                g_BtnGlobalSave.ctrl.Text := "Сохранить все изменения (!)"
             } else {
                 UpdateButtonState(g_BtnGlobalSave, false)
-                g_BtnGlobalSave.ctrl.Text := "💾 СОХРАНИТЬ ВСЕ ИЗМЕНЕНИЯ"
+                g_BtnGlobalSave.ctrl.Text := "Сохранить все изменения"
             }
         }
         ; ===================
@@ -799,7 +799,7 @@ UpdateEditorPreview() {
     text := StrReplace(text, "{SPECIALTY}", STATE["specialty"])
     text := StrReplace(text, "{RANK}", STATE["specialty"])
     
-    try EditorGui["EditorPreview"].Text := "💬 " text
+    try EditorGui["EditorPreview"].Text := "▶ " text
 }
 
 EditorDuplicateRow(*) {

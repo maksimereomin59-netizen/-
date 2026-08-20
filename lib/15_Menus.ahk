@@ -79,19 +79,19 @@ GetWheelIcon(slotIdx) {
     cat := SLOTS[slotIdx]["category"]
     
     if (cat = "Лечение") {
-        return "💊"
+        return "◉"
     }
     if (cat = "Вакцины" || cat = "Уколы") {
-        return "💉"
+        return "▲"
     }
     if (cat = "Операции") {
-        return "🔪"
+        return "✂"
     }
     if (cat = "Медосмотр") {
-        return "📋"
+        return "▤"
     }
     
-    return "⚡"
+    return "▶"
 }
 
 GetBindName(idx) {

@@ -39,7 +39,7 @@ CreateOverlayGuiBase(mode := "full") {
     if (mode = "mini") {
         OverlayGui.AddText("x0 y0 w" w " h35 Background" THEME["bgLight"], "")
         OverlayGui.SetFont("s10 bold", "Segoe UI")
-        OverlayGui.AddText("x15 y8 w" (w-30) " c" THEME["accent"] " BackgroundTrans", "🏥 Doctor Binder")
+        OverlayGui.AddText("x15 y8 w" (w-30) " c" THEME["accent"] " BackgroundTrans", "Doctor Binder")
         OverlayGui.AddText("x0 y35 w" w " h3 Background" THEME["success"] " vMiniStatusLine", "")
         
         y := 45
@@ -127,7 +127,7 @@ BuildMiniOverlay() {
     ; Заголовок со свечением
     OverlayGui.AddText("x0 y0 w" w " h40 Background" THEME["bgLight"], "")
     OverlayGui.SetFont("s11 bold", "Segoe UI")
-    OverlayGui.AddText("x16 y12 w" (w-32) " c" THEME["accent"] " BackgroundTrans", "🏥 Doctor Binder")
+    OverlayGui.AddText("x16 y12 w" (w-32) " c" THEME["accent"] " BackgroundTrans", "Doctor Binder")
     y += 40
     
     ; Полоска статуса (теперь с ID для обновления)
@@ -160,7 +160,7 @@ BuildMiniOverlay() {
         y += 26
         
         ; Статус текстом
-        statusText := STATE["isSending"] ? "⏳ Отправка..." : "✓ Готов"
+        statusText := STATE["isSending"] ? "Отправка..." : "Готов"
         statusColor := STATE["isSending"] ? THEME["warning"] : THEME["success"]
         OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" statusColor " vMiniStatus BackgroundTrans", statusText)
         y += 26
@@ -218,7 +218,7 @@ BuildFullOverlay() {
     ; Статистика
     y += 35
     OverlayGui.SetFont("s8", "Segoe UI")
-    statsInfo := "💊 " STATS["patientsHealed"] "   💉 " STATS["injectionsGiven"] "   🔪 " STATS["operationsDone"] "   📋 " STATS["medChecks"]
+    statsInfo := "Лечение: " STATS["patientsHealed"] "   Уколы: " STATS["injectionsGiven"] "   Операции: " STATS["operationsDone"] "   Медосмотры: " STATS["medChecks"]
     OverlayGui.AddText("x15 y" y " w" (w-30) " c" THEME["textDim"] " BackgroundTrans vOvStats", statsInfo)
     
     y += 20
@@ -375,7 +375,7 @@ UpdateOverlayData() {
         try OverlayGui["OvFooter"].Opt("c" THEME["textMuted"])
     }
     
-    try OverlayGui["OvStats"].Text := "💊 " STATS["patientsHealed"] "   💉 " STATS["injectionsGiven"] "   🔪 " STATS["operationsDone"]
+    try OverlayGui["OvStats"].Text := "Лечение: " STATS["patientsHealed"] "   Уколы: " STATS["injectionsGiven"] "   Операции: " STATS["operationsDone"]
 
     ; --- Обновление Списка Биндов ---
     

@@ -100,7 +100,7 @@ MarkUnsaved() {
         try {
             ; Включаем кнопку (зеленая)
             UpdateButtonState(g_BtnGlobalSave, true, "success")
-            g_BtnGlobalSave.ctrl.Text := "💾 СОХРАНИТЬ ВСЕ ИЗМЕНЕНИЯ (!)"
+            g_BtnGlobalSave.ctrl.Text := "Сохранить все изменения (!)"
         }
     }
 }

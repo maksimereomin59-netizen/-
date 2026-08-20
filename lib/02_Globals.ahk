@@ -34,7 +34,19 @@ global THEME := Map(
     "borderGlow",   "89b4fa",
     "bgHover",      "3b3d4f",
     "btnBg",        "313244",
-    "btnBgHover",   "45475a"
+    "btnBgHover",   "45475a",
+    ; === Дизайн-система (единые токены) ===
+    "radiusSm",     6,
+    "radius",       10,
+    "radiusLg",     14,
+    "spacing",      16,
+    "spacingSm",    8,
+    "spacingLg",    24,
+    "btnH",         36,        ; стандартная высота кнопки
+    "btnHSm",       30,        ; малая кнопка
+    "inputH",       30,        ; высота поля ввода
+    "cardPad",      16,        ; внутренний отступ карточки
+    "navH",         28,        ; высота пункта навигации
 )
 
 global CFG := Map(

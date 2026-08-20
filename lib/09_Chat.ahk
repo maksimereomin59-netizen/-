@@ -243,7 +243,7 @@ ShowMentionNotification(chatLine) {
     MentionNotifyGui.AddText("x0 y0 w6 h" h " Background" THEME["warning"], "")
     
     MentionNotifyGui.SetFont("s9 bold", "Segoe UI")
-    MentionNotifyGui.AddText("x25 y12 w200 c" THEME["warning"] " BackgroundTrans", "🔔 ВАС УПОМЯНУЛИ")
+    MentionNotifyGui.AddText("x25 y12 w200 c" THEME["warning"] " BackgroundTrans", "Вас упомянули")
     
     ; Сам текст сообщения
     MentionNotifyGui.SetFont("s10", "Segoe UI")
@@ -327,7 +327,7 @@ ShowSmsNotification(smsNumber) {
     SmsNotifyGui.AddText("x0 y0 w6 h" h " Background" THEME["accent"], "")
     
     SmsNotifyGui.SetFont("s9 bold", "Segoe UI")
-    SmsNotifyGui.AddText("x25 y12 w200 c" THEME["textDim"] " BackgroundTrans", "💬 ВХОДЯЩЕЕ СМС")
+    SmsNotifyGui.AddText("x25 y12 w200 c" THEME["textDim"] " BackgroundTrans", "Входящее СМС")
     
     SmsNotifyGui.SetFont("s18 bold", "Consolas")
     SmsNotifyGui.AddText("x25 y35 w280 c" THEME["text"], smsNumber)
