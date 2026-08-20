@@ -1201,6 +1201,7 @@ BuildMainGui() {
     global NavInd := Map("x", navCellX0 + navPadX, "w", navCellW - 2 * navPadX)
     global NavIndicator := MainGui.AddText("x" NavInd["x"] " y" indY " w" NavInd["w"] " h" indH " Background" THEME["accent"], "")
     global NavAnimTimer := ""
+    global NavAnimData := ""
 
     for i, label in navLabels {
         act := (i = NavActive)
@@ -1225,24 +1226,33 @@ BuildMainGui() {
     }
 
     AnimateNavIndicator(ind, targetX, targetW, aIndY, aIndH) {
-        global NavIndicator, NavAnimTimer
+        global NavIndicator, NavAnimTimer, NavAnimData
         ; остановить предыдущую анимацию индикатора
         if NavAnimTimer
             SetTimer(NavAnimTimer, 0)
-        fromX := ind["x"]
-        fromW := ind["w"]
-        step := 0
-        NavAnimTimer := () => (
-            step++,
-            t := Min(1, step / 10),
-            e := 1 - (1 - t) ** 3,      ; ease-out cubic — плавное скольжение
-            ind["x"] := Round(fromX + (targetX - fromX) * e),
-            ind["w"] := Round(fromW + (targetW - fromW) * e),
-            try NavIndicator.Move(ind["x"], aIndY, ind["w"], aIndH),
-            (t >= 1 ? SetTimer(NavAnimTimer, 0) : "")
+        NavAnimData := Map(
+            "ind", ind, "targetX", targetX, "targetW", targetW,
+            "aIndY", aIndY, "aIndH", aIndH,
+            "fromX", ind["x"], "fromW", ind["w"], "step", 0
         )
+        NavAnimTimer := NavAnimTick
         SetTimer(NavAnimTimer, 0)
         SetTimer(NavAnimTimer, 12)
+    }
+
+    NavAnimTick() {
+        global NavIndicator, NavAnimTimer, NavAnimData
+        d := NavAnimData
+        d["step"]++
+        t := Min(1, d["step"] / 10)
+        e := 1 - (1 - t) ** 3      ; ease-out cubic — плавное скольжение
+        d["ind"]["x"] := Round(d["fromX"] + (d["targetX"] - d["fromX"]) * e)
+        d["ind"]["w"] := Round(d["fromW"] + (d["targetW"] - d["fromW"]) * e)
+        try NavIndicator.Move(d["ind"]["x"], d["aIndY"], d["ind"]["w"], d["aIndH"])
+        if t >= 1 {
+            SetTimer(NavAnimTimer, 0)
+            NavAnimTimer := ""
+        }
     }
 
     NavSelect(idx) {
