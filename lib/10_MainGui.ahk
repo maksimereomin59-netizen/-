@@ -9,6 +9,8 @@ BuildMainGui() {
     global MainGui, HoverButtons, THEME, STATE, CFG, STATS, APP_NAME, VERSION, AUTHOR
     global g_BtnSaveProfile, g_BtnSaveSettings, g_BtnGlobalSave 
     global SettingGroups := Map()
+    global PageCur   ; текущая страница — ГЛОБАЛ: присваивания PageCur := N
+                     ; должны обновлять глобал, который читает PageCtrl
 
     try {
         if MainGui {
@@ -1247,12 +1249,13 @@ BuildMainGui() {
     }
 
     NavSelect(idx) {
-        global NavItems, NavActive, HoverButtons, THEME, NavInd
+        global NavItems, NavActive, HoverButtons, THEME, NavInd, MainGui
         if idx = NavActive
             return
-        ; Атомарное переключение страниц (скрыть старую / показать новую
-        ; в одном обработчике) — без WM_SETREDRAW и WinRedraw, которые
-        ; вызывали мигание
+        ; Батчим перерисовку: все изменения Visible применяются одним кадром
+        ; (WM_SETREDRAW off -> переключение -> WM_SETREDRAW on -> один repaint),
+        ; поэтому страница переключается мгновенно и без мерцания
+        SendMessage(0x000B, 0, 0, MainGui.Hwnd)
         PageSwitch(idx)
         NavActive := idx
         ; Восстановить активную подвкладку (внутренние группы страниц
@@ -1274,16 +1277,12 @@ BuildMainGui() {
             if IsObject(hb) && hb.HasOwnProp("isNav") && hb.isNav
                 hb.active := (hb.id = idx)
         }
+        ; Закрываем батч — одно обновление кадра вместо мерцания
+        SendMessage(0x000B, 1, 0, MainGui.Hwnd)
         ; плавно скользим индикатором к новой вкладке
         AnimateNavIndicator(NavInd,
             navCellX0 + (idx - 1) * navCellW + navPadX,
             navCellW - 2 * navPadX, indY, indH)
-        ; Синхронизация hover-состояний навигации: при следующем движении
-        ; мыши подсветка вернётся корректно, «залипаний» не будет
-        for hb in HoverButtons {
-            if IsObject(hb) && hb.HasOwnProp("isNav") && hb.isNav
-                hb.active := (hb.id = idx)
-        }
     }
 
     ; Показать первую страницу при старте (остальные скрыты сразу)
@@ -1295,8 +1294,11 @@ BuildMainGui() {
 ; Вызывается из BuildMainGui (PageCtrl(MainGui.Add...)) и из компонентов
 ; кнопок (StyledBtn/CreateClearBtn), чтобы кнопки переключались со страницей.
 ; PageCur = 0 — контролы вне страниц (шапка, навигация, отдельные окна).
-PageCtrl(ctrl) {
-    global PageCur, PageGroups
+PageCtrl(ctrl, parent := "") {
+    global PageCur, PageGroups, MainGui
+    ; Контролы других окон (редактор, фильтры, оверлей) к страницам не привязываем
+    if parent != "" && IsObject(MainGui) && parent != MainGui
+        return ctrl
     if PageCur > 0 && PageGroups.Has(PageCur)
         PageGroups[PageCur].Push(ctrl)
     return ctrl

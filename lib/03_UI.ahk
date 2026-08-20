@@ -26,9 +26,9 @@ class StyledBtn {
         this.ctrl.SetFont("s9 bold", "Segoe UI")
         ; Регистрируем кнопку в текущей странице (если создаётся в главном окне),
         ; чтобы она скрывалась/показывалась вместе со своей страницей
-        try PageCtrl(this.ctrl)
+        try PageCtrl(this.ctrl, parent)
         this.ctrl.OnEvent("Click", (*) => this.OnClick())
-        RoundCorners(this.ctrl, w, h, 6)    ; единый умеренный радиус (дизайн-система)
+        RoundCorners(this.ctrl, w, h, Min(10, h // 4))   ; радиус пропорционален высоте кнопки
         HoverButtons.Push(this)
     }
     OnClick() {
@@ -262,7 +262,7 @@ CreateClearBtn(parent, x, y, size, callback) {
     
     ; Создаем кнопку
     btn := parent.AddText("x" x " y" y " w" size " h" size " Center 0x200 BackgroundTrans c" THEME["textMuted"], iconSymbol)
-    try PageCtrl(btn)
+    try PageCtrl(btn, parent)
     
     try {
         btn.SetFont("s10", "Segoe MDL2 Assets")
