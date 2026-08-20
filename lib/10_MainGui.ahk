@@ -252,7 +252,7 @@ BuildMainGui() {
     yHead := 90 
     
     ; --- ШАПКА (современная) ---
-    AddModernHeader(yHead, "📋", THEME["accent"], "Бинды",
+    AddModernHeader(yHead, "≡", THEME["accent"], "Бинды",
         "Управление и настройка", "ВСЕГО СЛОТОВ: " Constants.MAX_SLOTS)
     
     
@@ -409,7 +409,7 @@ BuildMainGui() {
     yHead := 90
     
     ; --- ШАПКА (современная) ---
-    AddModernHeader(yHead, "⚙️", THEME["warning"], "Настройки",
+    AddModernHeader(yHead, "⚙", THEME["warning"], "Настройки",
         "Конфигурация биндера")
     
     yStart := 210
@@ -810,7 +810,7 @@ BuildMainGui() {
     yHead := 90
     
     ; --- ШАПКА (современная) ---
-    AddModernHeader(yHead, "📊", THEME["success"], "Статистика",
+    AddModernHeader(yHead, "▲", THEME["success"], "Статистика",
         "Анализ сессии")
     
     ; --- ЛЕВОЕ МЕНЮ ---
@@ -977,7 +977,7 @@ BuildMainGui() {
     yHead := 90
     
     ; --- ШАПКА (современная) ---
-    AddModernHeader(yHead, "❓", THEME["accentLight"], "Справка",
+    AddModernHeader(yHead, "?", THEME["accentLight"], "Справка",
         "База знаний и поддержка")
     
     yStart := 200
@@ -1170,107 +1170,83 @@ BuildMainGui() {
     SwitchHelpTab("Overlay")
 
     ; ==============================================================================
-    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (сегментированный контрол с анимацией)
-    ; Тёмный скруглённый трек, внутри — сегменты «иконка + подпись»:
-    ;   активный   — залит акцентным цветом, тёмный текст и ПЛАВНО вырастает
-    ;                (увеличивается на 8x4px с ease-out анимацией),
-    ;                при уходе с вкладки плавно сжимается обратно
-    ;   неактивный — подсвечивается при наведении (bgSelected) с курсором-рукой
-    ; Панель — ребёнок окна (создаётся после tabs.UseTab()), поверх всего,
-    ; к страницам Tab2 не привязана.
+    ; СОВРЕМЕННАЯ ПАНЕЛЬ НАВИГАЦИИ (плоские вкладки + плавный индикатор)
+    ; Никаких эмодзи (в GDI они рендерятся чёрными силуэтами), никаких
+    ; скруглённых заливок через SetWindowRgn (дают пиксельные края).
+    ; Только текст на прозрачном фоне и тонкая акцентная полоска-индикатор:
+    ;   активная вкладка — акцентный текст + жирный, под ней полоска
+    ;   индикатора, которая ПЛАВНО скользит к новой вкладке (ease-out)
+    ;   неактивная — приглушённый текст, при наведении светлеет
+    ; Панель — ребёнок окна (создаётся после tabs.UseTab()), поверх всего.
     ; ==============================================================================
     tabs.UseTab()   ; сброс: следующие контролы добавляются в окно, а не во вкладку
     MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
     MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
 
-    ; Трек-подложка (тёмная — сегменты на ней выделяются)
-    segTrack := MainGui.AddText("x20 y55 w920 h30 Background" THEME["bg"], "")
-    RoundCorners(segTrack, 920, 30, 15)
-
     global NavItems := []
     global NavActive := 1
-    navDefs := [["🏠", "Главная"], ["📋", "Бинды"], ["⚙️", "Настройки"], ["📊", "Статистика"], ["❓", "Справка"]]
-    segBaseW := 177
-    segBaseH := 26
-    segGrowW := 185
-    segGrowH := 30
-    segGap := 6
-    segBaseY := 57
-    segGrowY := 55
-    segX0 := 24
-    for i, def in navDefs {
+    navLabels := ["Главная", "Бинды", "Настройки", "Статистика", "Справка"]
+    navCellW := 184
+    navCellX0 := 20
+    navPadX := 14          ; отступ индикатора от краёв ячейки
+    navY := 57             ; y текста вкладки
+    navH := 28
+    indY := 81             ; y индикатора
+    indH := 4
+
+    ; Тонкая направляющая-рельса под вкладками
+    MainGui.AddText("x20 y84 w920 h1 Background" THEME["border"], "")
+
+    ; Индикатор активной вкладки (создаём раньше текста — он под ним)
+    global NavInd := Map("x", navCellX0 + navPadX, "w", navCellW - 2 * navPadX)
+    global NavIndicator := MainGui.AddText("x" NavInd["x"] " y" indY " w" NavInd["w"] " h" indH " Background" THEME["accent"], "")
+    global NavAnimTimer := ""
+
+    for i, label in navLabels {
         act := (i = NavActive)
-        bx := segX0 + (i - 1) * (segBaseW + segGap)
-        btn := MainGui.AddText("x" (act ? bx - 4 : bx) " y" (act ? segGrowY : segBaseY) " w" (act ? segGrowW : segBaseW) " h" (act ? segGrowH : segBaseH)
-            " Center 0x200 Background" (act ? THEME["accent"] : THEME["bgHighlight"]) " c" (act ? THEME["bg"] : THEME["textDim"]), def[1] " " def[2])
-        btn.SetFont("s9 bold", "Segoe UI")
-        RoundCorners(btn, act ? segGrowW : segBaseW, act ? segGrowH : segBaseH, 15)
+        cx := navCellX0 + (i - 1) * navCellW
+        btn := MainGui.AddText("x" cx " y" navY " w" navCellW " h" navH " Center 0x200 BackgroundTrans c"
+            (act ? THEME["accent"] : THEME["textDim"]), label)
+        btn.SetFont("s10" (act ? " bold" : " norm"), "Segoe UI")
         btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
-        item := Map(
-            "ctrl", btn,
-            "id", i,
-            "baseX", bx, "baseY", segBaseY, "baseW", segBaseW, "baseH", segBaseH,
-            "growX", bx - 4, "growY", segGrowY, "growW", segGrowW, "growH", segGrowH,
-            "curX", act ? bx - 4 : bx, "curY", act ? segGrowY : segBaseY,
-            "curW", act ? segGrowW : segBaseW, "curH", act ? segGrowH : segBaseH,
-            "anim", 0
-        )
         HoverButtons.Push({
             ctrl: btn, parent: MainGui, isClickable: true, id: i, isNav: true, active: act,
             SetHover: (thisObj, state) => (
-                ; активный сегмент при наведении не трогаем
+                ; активную вкладку при наведении не трогаем
                 (!thisObj.active ? (
-                    thisObj.ctrl.Opt("Background" (state ? THEME["bgSelected"] : THEME["bgHighlight"])
-                        " c" (state ? THEME["text"] : THEME["textDim"])),
+                    thisObj.ctrl.Opt("c" (state ? THEME["text"] : THEME["textDim"])),
                     thisObj.ctrl.Redraw()
                 ) : ""),
                 ; курсор-«рука» при наведении
                 DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
             )
         })
-        NavItems.Push(item)
+        NavItems.Push(Map("ctrl", btn, "id", i))
     }
 
-    AnimateNavItem(item, grow) {
-        ; остановить предыдущую анимацию этого сегмента
-        if item["anim"]
-            SetTimer(item["anim"], 0)
-        item["from"] := [item["curX"], item["curY"], item["curW"], item["curH"]]
-        item["to"] := grow ? [item["growX"], item["growY"], item["growW"], item["growH"]]
-                           : [item["baseX"], item["baseY"], item["baseW"], item["baseH"]]
-        item["step"] := 0
-        item["anim"] := () => NavAnimTick(item)
-        SetTimer(item["anim"], 0)
-        SetTimer(item["anim"], 12)
-    }
-
-    NavAnimTick(item) {
-        item["step"]++
-        t := item["step"] / 8
-        done := false
-        if t >= 1 {
-            t := 1
-            done := true
-        }
-        e := 1 - (1 - t) ** 3   ; ease-out cubic — плавное «вырастание»
-        fr := item["from"]
-        to := item["to"]
-        item["curX"] := Round(fr[1] + (to[1] - fr[1]) * e)
-        item["curY"] := Round(fr[2] + (to[2] - fr[2]) * e)
-        item["curW"] := Round(fr[3] + (to[3] - fr[3]) * e)
-        item["curH"] := Round(fr[4] + (to[4] - fr[4]) * e)
-        try {
-            item["ctrl"].Move(item["curX"], item["curY"], item["curW"], item["curH"])
-            RoundCorners(item["ctrl"], item["curW"], item["curH"], 15)
-        }
-        if done {
-            SetTimer(item["anim"], 0)
-            item["anim"] := 0
-        }
+    AnimateNavIndicator(ind, targetX, targetW, aIndY, aIndH) {
+        global NavIndicator, NavAnimTimer
+        ; остановить предыдущую анимацию индикатора
+        if NavAnimTimer
+            SetTimer(NavAnimTimer, 0)
+        fromX := ind["x"]
+        fromW := ind["w"]
+        step := 0
+        NavAnimTimer := () => (
+            step++,
+            t := Min(1, step / 10),
+            e := 1 - (1 - t) ** 3,      ; ease-out cubic — плавное скольжение
+            ind["x"] := Round(fromX + (targetX - fromX) * e),
+            ind["w"] := Round(fromW + (targetW - fromW) * e),
+            try NavIndicator.Move(ind["x"], aIndY, ind["w"], aIndH),
+            (t >= 1 ? SetTimer(NavAnimTimer, 0) : "")
+        )
+        SetTimer(NavAnimTimer, 0)
+        SetTimer(NavAnimTimer, 12)
     }
 
     NavSelect(idx) {
-        global NavItems, NavActive, HoverButtons, MainGui, THEME
+        global NavItems, NavActive, HoverButtons, MainGui, THEME, NavInd
         if idx = NavActive
             return
         ; заморозить перерисовку окна на время переключения страниц —
@@ -1280,17 +1256,19 @@ BuildMainGui() {
         NavActive := idx
         for item in NavItems {
             act := (item["id"] = idx)
-            item["ctrl"].Opt("Background" (act ? THEME["accent"] : THEME["bgHighlight"])
-                " c" (act ? THEME["bg"] : THEME["textDim"]))
+            item["ctrl"].Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
+            item["ctrl"].SetFont("s10" (act ? " bold" : " norm"), "Segoe UI")
             item["ctrl"].Redraw()
-            ; плавно увеличиваем новый активный сегмент, старый — сжимаем
-            AnimateNavItem(item, act)
         }
-        ; синхронизируем hover-состояния сегментов (чтобы подсветка не залипала)
+        ; синхронизируем hover-состояния вкладок (чтобы подсветка не залипала)
         for hb in HoverButtons {
             if IsObject(hb) && hb.HasOwnProp("isNav") && hb.isNav
                 hb.active := (hb.id = idx)
         }
+        ; плавно скользим индикатором к новой вкладке
+        AnimateNavIndicator(NavInd,
+            navCellX0 + (idx - 1) * navCellW + navPadX,
+            navCellW - 2 * navPadX, indY, indH)
         SendMessage(0x000B, 1, 0, MainGui.Hwnd)
         WinRedraw("ahk_id " MainGui.Hwnd)   ; у Gui нет метода Redraw — перерисовываем окно через WinRedraw
     }
