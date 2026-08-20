@@ -781,19 +781,19 @@ ShowRuleEditor(editIndex := 0) {
     
     ; --- ПОЛЯ ВВОДА ---
     RuleEditorGui.SetFont("s9", "Segoe UI")
-    RuleEditorGui.AddText("x" x " y" y " w300 c" THEME["textDim"], "Название папки (например: Лечение):")
+    RuleEditorGui.AddText("x" x " y" y " w300 c" THEME["textDim"] " BackgroundTrans", "Название папки (например: Лечение):")
     RuleEditorGui.SetFont("s10", "Segoe UI")
     RuleEditorGui.AddEdit("x" x " y" (y+25) " w" inputW " h32 vRuleName Background" THEME["bgHighlight"] " c" THEME["text"], data["name"])
     
     y += 75
     RuleEditorGui.SetFont("s9", "Segoe UI")
-    RuleEditorGui.AddText("x" x " y" y " w300 c" THEME["textDim"], "Фраза в чате (Триггер):")
+    RuleEditorGui.AddText("x" x " y" y " w300 c" THEME["textDim"] " BackgroundTrans", "Фраза в чате (Триггер):")
     RuleEditorGui.SetFont("s10", "Segoe UI")
     RuleEditorGui.AddEdit("x" x " y" (y+25) " w" inputW " h32 vRulePhrase Background" THEME["bgHighlight"] " c" THEME["text"], data["phrase"])
     
     y += 75
     RuleEditorGui.SetFont("s9", "Segoe UI")
-    RuleEditorGui.AddText("x" x " y" y " w300 c" THEME["textDim"], "Путь сохранения:")
+    RuleEditorGui.AddText("x" x " y" y " w300 c" THEME["textDim"] " BackgroundTrans", "Путь сохранения:")
     RuleEditorGui.SetFont("s10", "Segoe UI")
     
     ; Поле пути и кнопка в один ряд

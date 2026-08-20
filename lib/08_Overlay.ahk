@@ -39,28 +39,28 @@ CreateOverlayGuiBase(mode := "full") {
     if (mode = "mini") {
         OverlayGui.AddText("x0 y0 w" w " h35 Background" THEME["bgLight"], "")
         OverlayGui.SetFont("s10 bold", "Segoe UI")
-        OverlayGui.AddText("x15 y8 w" (w-30) " c" THEME["accent"], "🏥 Doctor Binder")
+        OverlayGui.AddText("x15 y8 w" (w-30) " c" THEME["accent"] " BackgroundTrans", "🏥 Doctor Binder")
         OverlayGui.AddText("x0 y35 w" w " h3 Background" THEME["success"] " vMiniStatusLine", "")
         
         y := 45
         OverlayGui.SetFont("s9", "Segoe UI")
-        OverlayGui.AddText("x15 y" (y+3) " w60 c" THEME["textDim"], "Пациент:")
+        OverlayGui.AddText("x15 y" (y+3) " w60 c" THEME["textDim"] " BackgroundTrans", "Пациент:")
         
         OverlayGui.SetFont("s10 bold", "Consolas")
         OverlayGui.AddEdit("x80 y" y " w80 h24 Background" THEME["bgHighlight"] " c" THEME["accent"] " vMiniInputId Center Hidden", "")
-        OverlayGui.AddText("x80 y" (y+3) " w80 c" THEME["textMuted"] " vMiniPatient", "—")
+        OverlayGui.AddText("x80 y" (y+3) " w80 c" THEME["textMuted"] " vMiniPatient BackgroundTrans", "—")
         
         OverlayGui.SetFont("s9 bold", "Segoe UI")
-        OverlayGui.AddText("x180 y" (y+3) " w165 Right c" THEME["success"] " vMiniStatus", "ГОТОВ")
+        OverlayGui.AddText("x180 y" (y+3) " w165 Right c" THEME["success"] " vMiniStatus BackgroundTrans", "ГОТОВ")
         
         y += 30
         OverlayGui.SetFont("s8", "Segoe UI")
-        OverlayGui.AddText("x15 y" y " w" (w-30) " c" THEME["textDim"] " vMiniStats", "...")
+        OverlayGui.AddText("x15 y" y " w" (w-30) " c" THEME["textDim"] " vMiniStats BackgroundTrans", "...")
         
         y += 20
         OverlayGui.SetFont("s7", "Segoe UI")
         hkMini := FormatHotkey(CFG["hotkeyMiniOverlay"])
-        OverlayGui.AddText("x0 y" y " w" w " Center c" THEME["textMuted"], hkMini ": Скрыть")
+        OverlayGui.AddText("x0 y" y " w" w " Center c" THEME["textMuted"] " BackgroundTrans", hkMini ": Скрыть")
         
         WinSetTransparent(CFG["overlayOpacity"], OverlayGui)
         return
@@ -127,7 +127,7 @@ BuildMiniOverlay() {
     ; Заголовок со свечением
     OverlayGui.AddText("x0 y0 w" w " h40 Background" THEME["bgLight"], "")
     OverlayGui.SetFont("s11 bold", "Segoe UI")
-    OverlayGui.AddText("x16 y12 w" (w-32) " c" THEME["accent"], "🏥 Doctor Binder")
+    OverlayGui.AddText("x16 y12 w" (w-32) " c" THEME["accent"] " BackgroundTrans", "🏥 Doctor Binder")
     y += 40
     
     ; Полоска статуса (теперь с ID для обновления)
@@ -137,32 +137,32 @@ BuildMiniOverlay() {
     
     ; Пациент с возможностью ввода
     OverlayGui.SetFont("s9 norm", "Segoe UI")
-    OverlayGui.AddText("x16 y" (y+3) " w80 c" THEME["textDim"], "Пациент:")
+    OverlayGui.AddText("x16 y" (y+3) " w80 c" THEME["textDim"] " BackgroundTrans", "Пациент:")
     
     if (STATE["overlayInputMode"]) {
         OverlayGui.SetFont("s10 bold", "Consolas")
         OverlayGui.AddEdit("x100 y" y " w150 h26 Background" THEME["bgHighlight"] " c" THEME["accent"] " vMiniInputId ReadOnly Center", STATE["tempId"])
         OverlayGui.SetFont("s8", "Segoe UI")
-        OverlayGui.AddText("x16 y" (y+32) " w" (w-32) " c" THEME["warning"] " Center", "Введите ID и нажмите Enter")
+        OverlayGui.AddText("x16 y" (y+32) " w" (w-32) " c" THEME["warning"] " Center BackgroundTrans", "Введите ID и нажмите Enter")
         y += 62
     } else {
         patientDisplay := STATE["patientId"] = "" ? "не задан" : GetPatientDisplay()
         patientColor := STATE["patientId"] = "" ? THEME["textMuted"] : THEME["success"]
         
         OverlayGui.SetFont("s10 bold", "Consolas")
-        OverlayGui.AddText("x100 y" (y+3) " w" (w-116) " c" patientColor " vMiniPatient", patientDisplay)
+        OverlayGui.AddText("x100 y" (y+3) " w" (w-116) " c" patientColor " vMiniPatient BackgroundTrans", patientDisplay)
         y += 30
         
         ; Статистика
         OverlayGui.SetFont("s8", "Segoe UI")
-        OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" THEME["textDim"] " vMiniStats", 
+        OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" THEME["textDim"] " vMiniStats BackgroundTrans", 
             "Вылечено: " STATS["patientsHealed"] " | Операций: " STATS["operationsDone"])
         y += 26
         
         ; Статус текстом
         statusText := STATE["isSending"] ? "⏳ Отправка..." : "✓ Готов"
         statusColor := STATE["isSending"] ? THEME["warning"] : THEME["success"]
-        OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" statusColor " vMiniStatus", statusText)
+        OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" statusColor " vMiniStatus BackgroundTrans", statusText)
         y += 26
     }
     
@@ -170,7 +170,7 @@ BuildMiniOverlay() {
     hkFull := FormatHotkey(CFG["hotkeyOverlay"]) ; Получаем клавишу полного оверлея
     
     OverlayGui.SetFont("s7", "Segoe UI")
-    OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" THEME["textMuted"] " Center", 
+    OverlayGui.AddText("x16 y" (y+3) " w" (w-32) " c" THEME["textMuted"] " Center BackgroundTrans", 
         hkFull " — полный | P — ID | Esc — закрыть")
     y += 24
     

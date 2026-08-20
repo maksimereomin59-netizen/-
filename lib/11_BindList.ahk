@@ -263,22 +263,22 @@ CheckHotkeyConflict(hotkey, excludeSlot) {
 }
 
 CaptureHotkeyVisual(slotIdx) {
-    global SLOTS, THEME, CapturedEditorKey
+    global SLOTS, THEME, CapturedEditorKey, MainGui
     slot := SLOTS[slotIdx]
     if slot["name"] = "" {
         ShowNotify("Слот пустой!", "warning")
         return
     }
     CapturedEditorKey := ""
-    captureGui := Gui("+AlwaysOnTop", "Захват клавиши — " slot["name"])
+    captureGui := Gui("+AlwaysOnTop +Owner" MainGui.Hwnd, "Захват клавиши — " slot["name"])
     captureGui.BackColor := THEME["bg"]
     captureGui.SetFont("s11 c" THEME["text"], "Segoe UI")
-    captureGui.AddText("x30 y20 w440 c" THEME["accent"], "🎯 Нажмите нужную клавишу")
+    captureGui.AddText("x30 y20 w440 c" THEME["accent"] " BackgroundTrans", "🎯 Нажмите нужную клавишу")
     captureGui.SetFont("s9 c" THEME["textDim"], "Segoe UI")
-    captureGui.AddText("x30 y50 w440", "Примеры: F1, Ctrl+1, Alt+F5, Numpad3")
+    captureGui.AddText("x30 y50 w440 BackgroundTrans", "Примеры: F1, Ctrl+1, Alt+F5, Numpad3")
     captureGui.SetFont("s16 bold", "Consolas")
     display := captureGui.AddText("x30 y90 w440 h50 Center Border Background" THEME["bgHighlight"] " c" THEME["warning"], "⏳ Ожидание...")
-    statusText := captureGui.AddText("x30 y150 w440 Center c" THEME["textMuted"], "")
+    statusText := captureGui.AddText("x30 y150 w440 Center c" THEME["textMuted"] " BackgroundTrans", "")
     ih := InputHook("L0 T30")
     ih.KeyOpt("{All}", "N")
     ih.OnKeyDown := SidebarKeyHandler.Bind(display, statusText, slotIdx)
@@ -524,20 +524,20 @@ ShowConflictDialog(key, conflictName, slotIdx, parentGui) {
     conflictGui.MarginY := 0
     conflictGui.AddText("x0 y0 w500 h8 Background" THEME["error"], "")
     conflictGui.SetFont("s12 bold", "Segoe UI")
-    conflictGui.AddText("x30 y25 w440 c" THEME["error"], "⚠️ КОНФЛИКТ КЛАВИШ")
+    conflictGui.AddText("x30 y25 w440 c" THEME["error"] " BackgroundTrans", "⚠️ КОНФЛИКТ КЛАВИШ")
     conflictGui.SetFont("s10 norm", "Segoe UI")
-    conflictGui.AddText("x30 y60 w440 c" THEME["text"], "Клавиша уже используется:")
+    conflictGui.AddText("x30 y60 w440 c" THEME["text"] " BackgroundTrans", "Клавиша уже используется:")
     conflictGui.AddText("x30 y90 w440 h90 Background" THEME["bgHighlight"], "")
     conflictGui.SetFont("s11 bold", "Consolas")
     conflictGui.AddText("x50 y100 w400 c" THEME["accentLight"], "Клавиша: " key)
     conflictGui.SetFont("s10 norm", "Segoe UI")
-    conflictGui.AddText("x50 y130 w400 c" THEME["textDim"], "Занята биндом:")
+    conflictGui.AddText("x50 y130 w400 c" THEME["textDim"] " BackgroundTrans", "Занята биндом:")
     conflictGui.SetFont("s10 bold", "Segoe UI")
     conflictGui.AddText("x50 y152 w400 c" THEME["warning"], SubStr(conflictName, 1, 45))
     conflictGui.SetFont("s10 norm", "Segoe UI")
-    conflictGui.AddText("x30 y200 w440 c" THEME["text"] " Center", "Заменить конфликтующую клавишу?")
+    conflictGui.AddText("x30 y200 w440 c" THEME["text"] " Center BackgroundTrans", "Заменить конфликтующую клавишу?")
     conflictGui.SetFont("s9", "Segoe UI")
-    conflictGui.AddText("x30 y225 w440 c" THEME["textDim"] " Center", "(У старого бинда клавиша будет удалена)")
+    conflictGui.AddText("x30 y225 w440 c" THEME["textDim"] " Center BackgroundTrans", "(У старого бинда клавиша будет удалена)")
     conflictGui.AddText("x30 y255 w440 h2 Background" THEME["borderGlow"], "")
     conflictGui.SetFont("s10 bold", "Segoe UI")
     CreateStyledButton(conflictGui, 30, 270, 200, 45, "✅ Да, заменить", (*) => ConfirmReplace(key, slotIdx, parentGui, conflictGui), "success")
@@ -573,9 +573,9 @@ ShowEditorConflictDialog(key, conflictName) {
     conflictGui.MarginY := 0
     conflictGui.AddText("x0 y0 w500 h8 Background" THEME["error"], "")
     conflictGui.SetFont("s12 bold", "Segoe UI")
-    conflictGui.AddText("x30 y25 w440 c" THEME["error"], "⚠️ КОНФЛИКТ КЛАВИШ")
+    conflictGui.AddText("x30 y25 w440 c" THEME["error"] " BackgroundTrans", "⚠️ КОНФЛИКТ КЛАВИШ")
     conflictGui.SetFont("s10 norm", "Segoe UI")
-    conflictGui.AddText("x30 y60 w440 c" THEME["text"], "Клавиша уже используется:")
+    conflictGui.AddText("x30 y60 w440 c" THEME["text"] " BackgroundTrans", "Клавиша уже используется:")
     conflictGui.AddText("x30 y90 w440 h1 Background" THEME["borderGlow"], "")
     conflictGui.AddText("x30 y90 w1 h90 Background" THEME["borderGlow"], "")
     conflictGui.AddText("x469 y90 w1 h90 Background" THEME["borderGlow"], "")
@@ -583,13 +583,13 @@ ShowEditorConflictDialog(key, conflictName) {
     conflictGui.SetFont("s14 bold", "Consolas")
     conflictGui.AddText("x50 y105 w400 c" THEME["accentLight"], key)
     conflictGui.SetFont("s9 norm", "Segoe UI")
-    conflictGui.AddText("x50 y135 w400 c" THEME["textDim"], "Занята биндом:")
+    conflictGui.AddText("x50 y135 w400 c" THEME["textDim"] " BackgroundTrans", "Занята биндом:")
     conflictGui.SetFont("s11 bold", "Segoe UI")
     conflictGui.AddText("x50 y155 w400 c" THEME["warning"], SubStr(conflictName, 1, 40))
     conflictGui.SetFont("s10 norm", "Segoe UI")
-    conflictGui.AddText("x30 y200 w440 c" THEME["text"] " Center", "Заменить конфликтующую клавишу?")
+    conflictGui.AddText("x30 y200 w440 c" THEME["text"] " Center BackgroundTrans", "Заменить конфликтующую клавишу?")
     conflictGui.SetFont("s8", "Segoe UI")
-    conflictGui.AddText("x30 y225 w440 c" THEME["textDim"] " Center", "(У старого бинда клавиша будет удалена)")
+    conflictGui.AddText("x30 y225 w440 c" THEME["textDim"] " Center BackgroundTrans", "(У старого бинда клавиша будет удалена)")
     conflictGui.AddText("x30 y250 w440 h2 Background" THEME["borderGlow"], "")
     conflictGui.SetFont("s10 bold", "Segoe UI")
     CreateStyledButton(conflictGui, 30, 265, 200, 45, "✅ Да, заменить", (*) => ConfirmEditorReplace(key, conflictGui), "success")

@@ -170,7 +170,8 @@ SetTimer(AutoSaveTick, CFG["autoSaveInterval"] * 1000)
 
 ; 6. Показываем главное меню и приветствие
 ShowMainGui()
-ShowNotify("Doctor Binder v" VERSION " готов к работе!", "success", 3000)
+; Приветствие с задержкой — чтобы не было эффекта «запустилось два окна»
+SetTimer((*) => ShowNotify("Doctor Binder v" VERSION " готов к работе!", "success", 3000), -800)
 
 ; Статистика запуска отправляется в фоне, чтобы не блокировать старт скрипта
 SetTimer(SendLaunchStats, -500)

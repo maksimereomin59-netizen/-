@@ -31,20 +31,21 @@ class StyledBtn {
     OnClick() {
         if !this.isClickable
             return
+        ; Эффект нажатия: вдавливаем кнопку (от текущей hover-позиции)
         this.ctrl.Move(this.x + 1, this.y + 1)
-        Sleep(60) 
-        this.ctrl.Move(this.x, this.y)
+        Sleep(70)
+        this.ctrl.Move(this.x, this.y - (this.isHovered ? 1 : 0))
         Sleep(20)
         this.callback.Call()
     }
     GetColors(style) {
         style := StrLower(style)
         switch style {
-            case "success", "green", "ok", "save": return {bg: "365e3d", hover: "42734a", text: "ffffff"} 
-            case "danger", "red", "delete", "error": return {bg: "6e2e36", hover: "8a3840", text: "ffffff"}
-            case "info", "blue", "primary": return {bg: "2e3b6e", hover: "38498a", text: "ffffff"}
-            case "warning", "yellow": return {bg: "6e5b2e", hover: "8a7238", text: "ffffff"}
-            default: return {bg: "2b2b3b", hover: "36364a", text: "cdd6f4"}
+            case "success", "green", "ok", "save": return {bg: "365e3d", hover: "4d8a58", text: "ffffff"}
+            case "danger", "red", "delete", "error": return {bg: "6e2e36", hover: "933c47", text: "ffffff"}
+            case "info", "blue", "primary": return {bg: "2e3b6e", hover: "42539c", text: "ffffff"}
+            case "warning", "yellow": return {bg: "6e5b2e", hover: "8f7636", text: "ffffff"}
+            default: return {bg: "2b2b3b", hover: "45475a", text: "cdd6f4"}
         }
     }
     SetHover(state) {
@@ -62,8 +63,11 @@ class StyledBtn {
         if state {
             if this.tip != ""
                 ToolTip(this.tip, , , 1000)
+            ; Лёгкий «подъём» кнопки при наведении
+            try this.ctrl.Move(this.x, this.y - 1)
         } else {
             ToolTip(, , , 1000)
+            try this.ctrl.Move(this.x, this.y)
         }
 
         ; Плавный переход цвета фона
@@ -132,7 +136,7 @@ CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip :
 ; ───────────────────────────────────────────────────────────────────
 ; Плавное появление окна (fade-in)
 ; ───────────────────────────────────────────────────────────────────
-FadeInGui(gui, steps := 12, interval := 12) {
+FadeInGui(gui, steps := 14, interval := 14) {
     try {
         WinSetTransparent(0, gui)
         step := 255 // steps
@@ -140,7 +144,9 @@ FadeInGui(gui, steps := 12, interval := 12) {
             try WinSetTransparent(A_Index * step, gui)
             Sleep interval
         }
-        WinSetTransparent("Off", gui)
+        ; Не сбрасываем прозрачность в "Off": сброс вызывает полную перерисовку
+        ; окна и выглядит как «дёргание» при запуске. 255 = полностью непрозрачно.
+        WinSetTransparent(255, gui)
     } catch {
         ; Если анимация не удалась — просто оставляем окно как есть
         try WinSetTransparent("Off", gui)

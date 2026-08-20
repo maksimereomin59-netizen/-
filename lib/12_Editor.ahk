@@ -9,6 +9,7 @@ OpenBindEditor(slotNum) {
     global EditorGui, SLOTS, CurrentEditSlot, THEME, EditorHasChanges
     global CurrentSelectedRow, EditorEditBox, EditorDelayBox, EditorKeyDisplay
     global GlobalUnsavedChanges, WasDirtyBeforeEditor, HoverButtons, BtnConfirmDelay
+    global MainGui
     
     SaveUndoState("Редактирование бинда")
     
@@ -28,7 +29,7 @@ OpenBindEditor(slotNum) {
     totalW := 960
     totalH := 720
     
-    EditorGui := Gui("-Resize -Caption +Border", "Bind Editor")
+    EditorGui := Gui("-Resize -Caption +Border +Owner" MainGui.Hwnd, "Bind Editor")
     EditorGui.BackColor := THEME["bg"]
     EditorGui.SetFont("s10 c" THEME["text"], "Segoe UI")
     EditorGui.OnEvent("Close", (*) => SafeCloseEditor())
@@ -211,7 +212,7 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x20 y" (yFooter-5) " w" (totalW-40) " h2 Background" THEME["borderGlow"], "")
     CreateStyledButton(EditorGui, 20, yFooter, 220, 45, "💾 СОХРАНИТЬ", (*) => SaveModernEditor(), "success")
     EditorGui.SetFont("s9 italic", "Segoe UI")
-    EditorGui.AddText("x260 y" (yFooter+15) " w480 Center c" THEME["textMuted"], "Все изменения применяются только после нажатия кнопки Сохранить")
+    EditorGui.AddText("x260 y" (yFooter+15) " w480 Center c" THEME["textMuted"] " BackgroundTrans", "Все изменения применяются только после нажатия кнопки Сохранить")
     CreateStyledButton(EditorGui, totalW-200, yFooter, 180, 45, "❌ ОТМЕНА", (*) => SafeCloseEditor(), "danger")
     
     if (lv.GetCount() > 0) {

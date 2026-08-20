@@ -233,7 +233,7 @@ ShowBindSelector(cfgKey, btnName) {
     BindSelectorGui.BackColor := THEME["bg"]
     
     BindSelectorGui.SetFont("s9 bold", "Segoe UI")
-    BindSelectorGui.AddText("x10 y5 w200 c" THEME["accent"], "Выберите бинд:")
+    BindSelectorGui.AddText("x10 y5 w200 c" THEME["accent"] " BackgroundTrans", "Выберите бинд:")
     
     ; Таблица
     lvSel := BindSelectorGui.AddListView("x5 y25 w240 h250 -Hdr -Multi Background" THEME["bgLight"] " c" THEME["text"], ["Name", "ID"])

@@ -130,7 +130,7 @@ BuildMainGui() {
     RoundCorners(stripeProfile, 4, 420, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (xLeft+20) " y" (yStart+15) " w" (colW-40) " c" THEME["accentLight"], "👤 ЛИЧНОЕ ДЕЛО")
+    MainGui.AddText("x" (xLeft+20) " y" (yStart+15) " w" (colW-40) " c" THEME["accentLight"] " BackgroundTrans", "👤 ЛИЧНОЕ ДЕЛО")
     MainGui.AddText("x" (xLeft+20) " y" (yStart+45) " w" (colW-40) " h2 Background" THEME["border"], "")
     
     y := yStart + 60
@@ -179,7 +179,7 @@ BuildMainGui() {
     RoundCorners(stripePatient, 4, 160, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["success"], "👥 ТЕКУЩИЙ ПАЦИЕНТ")
+    MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["success"] " BackgroundTrans", "👥 ТЕКУЩИЙ ПАЦИЕНТ")
     MainGui.AddText("x" (xRight+20) " y" (y+45) " w" (colW-40) " h2 Background" THEME["border"], "")
     
     yIn := y + 60
@@ -210,7 +210,7 @@ BuildMainGui() {
     RoundCorners(stripeControl, 4, 240, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["warning"], "⚡ БЫСТРОЕ УПРАВЛЕНИЕ")
+    MainGui.AddText("x" (xRight+20) " y" (y+15) " w" (colW-40) " c" THEME["warning"] " BackgroundTrans", "⚡ БЫСТРОЕ УПРАВЛЕНИЕ")
     MainGui.AddText("x" (xRight+20) " y" (y+45) " w" (colW-40) " h2 Background" THEME["border"], "")
     
     yIn := y + 60
@@ -273,7 +273,7 @@ BuildMainGui() {
     xTool := 40
     
     MainGui.SetFont("s11 bold", "Segoe UI")
-    MainGui.AddText("x" xTool " y" yTool " w150 c" THEME["accentLight"], "🔎 ПОИСК")
+    MainGui.AddText("x" xTool " y" yTool " w150 c" THEME["accentLight"] " BackgroundTrans", "🔎 ПОИСК")
     
     ; Поле поиска
     MainGui.SetFont("s10 norm", "Segoe UI")
@@ -284,7 +284,7 @@ BuildMainGui() {
     CreateClearBtn(MainGui, xTool+335, yTool-3, 30, (*) => ClearSearch())
     
     ; Фильтр (Справа)
-    MainGui.AddText("x" (xTool+380) " y" yTool " w60 Right c" THEME["textDim"], "Фильтр:")
+    MainGui.AddText("x" (xTool+380) " y" yTool " w60 Right c" THEME["textDim"] " BackgroundTrans", "Фильтр:")
     
   
     global btnFilterDisplay
@@ -354,7 +354,7 @@ BuildMainGui() {
 
     ; Подвал списка
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x40 y" (yList+hList+10) " w200 c" THEME["textMuted"] " vListStatusLabel", "Загрузка списка...")
+    MainGui.AddText("x40 y" (yList+hList+10) " w200 c" THEME["textMuted"] " vListStatusLabel BackgroundTrans", "Загрузка списка...")
 
 
     ; ======================= ПРАВАЯ КОЛОНКА: ДЕЙСТВИЯ =======================
@@ -368,7 +368,7 @@ BuildMainGui() {
     RoundCorners(stripeActions, 4, 500, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"], "⚡ ДЕЙСТВИЯ")
+    MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"] " BackgroundTrans", "⚡ ДЕЙСТВИЯ")
     MainGui.AddText("x" (xRight+20) " y" (yStart+45) " w" (wRight-40) " h2 Background" THEME["border"], "")
     
     ySide := yStart + 60
@@ -380,7 +380,7 @@ BuildMainGui() {
     
     ySide += 70
     MainGui.SetFont("s9 bold", "Segoe UI")
-    MainGui.AddText("x" xSide " y" ySide " w" wSide " c" THEME["textDim"], "ВЫБРАННЫЙ ЭЛЕМЕНТ:")
+    MainGui.AddText("x" xSide " y" ySide " w" wSide " c" THEME["textDim"] " BackgroundTrans", "ВЫБРАННЫЙ ЭЛЕМЕНТ:")
     
     ySide += 25
     gap := 8
@@ -516,13 +516,13 @@ BuildMainGui() {
     
     ; ЗАГОЛОВОК И ОПИСАНИЕ
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("General", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"], "Основные параметры"))
+    AddToGroup("General", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Основные параметры"))
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("General", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"], "Настройте базовое поведение биндера, клавишу активации чата и формат отображения ID пациентов."))
+    AddToGroup("General", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Настройте базовое поведение биндера, клавишу активации чата и формат отображения ID пациентов."))
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    AddToGroup("General", MainGui.AddText("x" x " y" (y+3) " w150 c" THEME["textDim"], "Клавиша чата (F6/T):"))
+    AddToGroup("General", MainGui.AddText("x" x " y" (y+3) " w150 c" THEME["textDim"] " BackgroundTrans", "Клавиша чата (F6/T):"))
     val := CFG["chatKey"]
     disp := val = "" ? "—" : FormatHotkey(val)
     hkChat := MainGui.AddText("x" (x+160) " y" y " w120 h26 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_ChatKey", disp)
@@ -534,65 +534,65 @@ BuildMainGui() {
     hkChat.OnEvent("Click", (*) => StartHotkeyCapture("ChatKey"))
     
     y += 50
-    AddToGroup("General", MainGui.AddText("x" x " y" (y-5) " w400 c" THEME["textDim"], "Формат ID пациента (как вставлять в чат):"))
+    AddToGroup("General", MainGui.AddText("x" x " y" (y-5) " w400 c" THEME["textDim"] " BackgroundTrans", "Формат ID пациента (как вставлять в чат):"))
     btnW := 100
     btnH := 35
     MainGui.SetFont("s9 bold", "Segoe UI")
     
-    b1 := MainGui.AddText("x" x " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_At", "@ID")
+    b1 := MainGui.AddText("x" x " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_At BackgroundTrans", "@ID")
     AddToGroup("General", b1)
     b1.OnEvent("Click", (*) => SetIdFormatGUI("at"))
     
-    b2 := MainGui.AddText("x" (x+btnW+10) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Quote", "`"ID`"")
+    b2 := MainGui.AddText("x" (x+btnW+10) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Quote BackgroundTrans", "`"ID`"")
     AddToGroup("General", b2)
     b2.OnEvent("Click", (*) => SetIdFormatGUI("quote"))
     
-    b3 := MainGui.AddText("x" (x+btnW*2+20) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Plain", "ID")
+    b3 := MainGui.AddText("x" (x+btnW*2+20) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Plain BackgroundTrans", "ID")
     AddToGroup("General", b3)
     b3.OnEvent("Click", (*) => SetIdFormatGUI("plain"))
     
     y += 90
     MainGui.SetFont("s10 norm", "Segoe UI")
-    c1 := MainGui.AddCheckbox("x" x " y" y " vSettingsOnlyGTA c" THEME["text"] " Checked" (CFG["onlyGTA"] ? 1 : 0), " Работа только при активном окне GTA")
+    c1 := MainGui.AddCheckbox("x" x " y" y " vSettingsOnlyGTA c" THEME["text"] " BackgroundTrans" " Checked" (CFG["onlyGTA"] ? 1 : 0), " Работа только при активном окне GTA")
     AddToGroup("General", c1)
     c1.OnEvent("Click", (*) => CheckSettingsDirty())
     
     ; ======================= 2. УВЕДОМЛЕНИЯ =======================
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("Notify", MainGui.AddText("x" x " y" y " w400 c" THEME["warning"], "Система уведомлений"))
+    AddToGroup("Notify", MainGui.AddText("x" x " y" y " w400 c" THEME["warning"] " BackgroundTrans", "Система уведомлений"))
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("Notify", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"], "Управляйте звуковыми и визуальными оповещениями. Полезно, если игра свернута."))
+    AddToGroup("Notify", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Управляйте звуковыми и визуальными оповещениями. Полезно, если игра свернута."))
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    c2 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifySms c" THEME["text"] " Checked" (CFG["notifySms"] ? 1 : 0), " Всплывающее SMS (если игра свернута)")
+    c2 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifySms c" THEME["text"] " BackgroundTrans" " Checked" (CFG["notifySms"] ? 1 : 0), " Всплывающее SMS (если игра свернута)")
     AddToGroup("Notify", c2)
     c2.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c3 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyMention c" THEME["text"] " Checked" (CFG["notifyMention"] ? 1 : 0), " Звук при упоминании вашего ника в чате")
+    c3 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyMention c" THEME["text"] " BackgroundTrans" " Checked" (CFG["notifyMention"] ? 1 : 0), " Звук при упоминании вашего ника в чате")
     AddToGroup("Notify", c3)
     c3.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c4 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyKeywords c" THEME["text"] " Checked" (CFG["notifyKeywords"] ? 1 : 0), " Реагировать на просьбы (врач, лечи, таблетку)")
+    c4 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyKeywords c" THEME["text"] " BackgroundTrans" " Checked" (CFG["notifyKeywords"] ? 1 : 0), " Реагировать на просьбы (врач, лечи, таблетку)")
     AddToGroup("Notify", c4)
     c4.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c5 := MainGui.AddCheckbox("x" x " y" y " vSettingsConfirmDelete c" THEME["text"] " Checked" (EditorConfirmDelete ? 1 : 0), " Спрашивать подтверждение при удалении строк")
+    c5 := MainGui.AddCheckbox("x" x " y" y " vSettingsConfirmDelete c" THEME["text"] " BackgroundTrans" " Checked" (EditorConfirmDelete ? 1 : 0), " Спрашивать подтверждение при удалении строк")
     AddToGroup("Notify", c5)
     c5.OnEvent("Click", (*) => CheckSettingsDirty())
     
     ; ======================= 3. ТАЙМИНГИ =======================
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w400 c" THEME["success"], "Тайминги и Интерфейс"))
+    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w400 c" THEME["success"] " BackgroundTrans", "Тайминги и Интерфейс"))
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("Timing", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"], "Настройка задержек между строками для обхода анти-флуда и прозрачность оверлея."))
+    AddToGroup("Timing", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Настройка задержек между строками для обхода анти-флуда и прозрачность оверлея."))
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"], "Базовая (мс):"))
-    AddToGroup("Timing", MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"], "Разброс (Random):"))
+    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "Базовая (мс):"))
+    AddToGroup("Timing", MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "Разброс (Random):"))
     y += 25
     e1 := MainGui.AddEdit("x" x " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsBaseDelay", CFG["baseDelay"])
     AddToGroup("Timing", e1)
@@ -602,8 +602,8 @@ BuildMainGui() {
     e2.OnEvent("Change", (*) => CheckSettingsDirty())
     
     y += 50
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"], "После чата (t):"))
-    AddToGroup("Timing", MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"], "После ввода (Enter):"))
+    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "После чата (t):"))
+    AddToGroup("Timing", MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "После ввода (Enter):"))
     y += 25
     e3 := MainGui.AddEdit("x" x " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsAfterChat", CFG["afterChatDelay"])
     AddToGroup("Timing", e3)
@@ -621,16 +621,16 @@ BuildMainGui() {
     AddToGroup("Timing", bSlow.ctrl)
     
     y += 45
-    cAutoSave := MainGui.AddCheckbox("x" x " y" y " vSettingsEditorAutoSave c" THEME["text"] " Checked" (CFG["editorAutoSaveDelay"] ? 1 : 0), " Авто-сохранение задержки в редакторе (без галочки)")
+    cAutoSave := MainGui.AddCheckbox("x" x " y" y " vSettingsEditorAutoSave c" THEME["text"] " BackgroundTrans" " Checked" (CFG["editorAutoSaveDelay"] ? 1 : 0), " Авто-сохранение задержки в редакторе (без галочки)")
     AddToGroup("Timing", cAutoSave)
     cAutoSave.OnEvent("Click", (*) => CheckSettingsDirty())
     
     y += 40 
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w250 c" THEME["textDim"], "Прозрачность оверлея:"))
-    slVal := MainGui.AddText("x" (x+300) " y" y " w100 Right c" THEME["accent"] " vOpacityDisplay", CFG["overlayOpacity"])
+    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w250 c" THEME["textDim"] " BackgroundTrans", "Прозрачность оверлея:"))
+    slVal := MainGui.AddText("x" (x+300) " y" y " w100 Right c" THEME["accent"] " vOpacityDisplay BackgroundTrans", CFG["overlayOpacity"])
     AddToGroup("Timing", slVal)
     y += 25
-    sl := MainGui.AddSlider("x" x " y" y " w420 h30 vSettingsOverlayOpacity Range100-255 AltSubmit", CFG["overlayOpacity"])
+    sl := MainGui.AddSlider("x" x " y" y " w420 h30 vSettingsOverlayOpacity Range100-255 AltSubmit" " BackgroundTrans", CFG["overlayOpacity"])
     AddToGroup("Timing", sl)
     sl.OnEvent("Change", (ctrl, *) => (
         MainGui["OpacityDisplay"].Text := ctrl.Value,
@@ -640,7 +640,7 @@ BuildMainGui() {
     ; ======================= 4. КЛАВИШИ =======================
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("Hotkeys", MainGui.AddText("x" x " y" y " w400 c" THEME["text"], "Глобальные клавиши"))
+    AddToGroup("Hotkeys", MainGui.AddText("x" x " y" y " w400 c" THEME["text"] " BackgroundTrans", "Глобальные клавиши"))
     
     y += 40 
 
@@ -664,7 +664,7 @@ BuildMainGui() {
         AddToGroup("Hotkeys", bn)
         
         ; Статус (для конфликтов)
-        st := MainGui.AddText("x" (x+130) " y" (yPos+30) " w200 h15 c" THEME["error"] " vStatus_" type, "")
+        st := MainGui.AddText("x" (x+130) " y" (yPos+30) " w200 h15 c" THEME["error"] " vStatus_" type " BackgroundTrans", "")
         AddToGroup("Hotkeys", st)
         
         ; Событие захвата
@@ -687,7 +687,7 @@ BuildMainGui() {
     y += 50 ; Отступ перед секторами
     
     MainGui.SetFont("s10 bold", "Segoe UI")
-    AddToGroup("Hotkeys", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"], "Настройка секторов меню:"))
+    AddToGroup("Hotkeys", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Настройка секторов меню:"))
     y += 30
     
     ; Функция ячейки радиального меню
@@ -724,24 +724,24 @@ BuildMainGui() {
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
     ; Заголовок
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"], "Автоматические отчеты"))
+    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Автоматические отчеты"))
     
     y += 30
     MainGui.SetFont("s9", "Segoe UI")
     ; Описание
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"], "Биндер будет сам делать F8 при лечении и раскладывать скрины по папкам."))
+    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"] " BackgroundTrans", "Биндер будет сам делать F8 при лечении и раскладывать скрины по папкам."))
     
     y += 40
     MainGui.SetFont("s11 bold", "Segoe UI")
     ; Чекбокс
-    cScr := MainGui.AddCheckbox("x" x " y" y " vSettingsAutoScreen c" THEME["success"] " Checked" (CFG["autoScreen"] ? 1 : 0), " Включить авто-сортировку (Smart Sort)")
+    cScr := MainGui.AddCheckbox("x" x " y" y " vSettingsAutoScreen c" THEME["success"] " BackgroundTrans" " Checked" (CFG["autoScreen"] ? 1 : 0), " Включить авто-сортировку (Smart Sort)")
     AddToGroup("Screenshots", cScr)
     cScr.OnEvent("Click", (*) => CheckSettingsDirty())
     
     
     y += 40
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"], "Создайте правила: какую фразу искать в чате и куда сохранять скриншот."))
+    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"] " BackgroundTrans", "Создайте правила: какую фразу искать в чате и куда сохранять скриншот."))
     
     y += 25
     
@@ -936,20 +936,20 @@ BuildMainGui() {
     y := yStart + 30
     x := xContent + 40
     MainGui.SetFont("s16 bold", "Segoe UI")
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"], "Информация о сессии"))
+    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Информация о сессии"))
     
     y += 60
     MainGui.SetFont("s11 norm", "Segoe UI")
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"], "Время запуска:"))
+    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"] " BackgroundTrans", "Время запуска:"))
     MainGui.SetFont("s16 bold", "Consolas")
-    AddToStatGroup("Info", MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["text"], FormatTime(STATS["sessionStart"], "HH:mm:ss")))
+    AddToStatGroup("Info", MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["text"] " BackgroundTrans", FormatTime(STATS["sessionStart"], "HH:mm:ss")))
     
     y += 50
     MainGui.SetFont("s11 norm", "Segoe UI")
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"], "Текущее время:"))
+    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"] " BackgroundTrans", "Текущее время:"))
     MainGui.SetFont("s16 bold", "Consolas")
     ; Часы
-    clk := MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["success"] " vRealTimeClock", FormatTime(A_Now, "HH:mm:ss"))
+    clk := MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["success"] " vRealTimeClock BackgroundTrans", FormatTime(A_Now, "HH:mm:ss"))
     AddToStatGroup("Info", clk)
     
     y += 100
@@ -1065,7 +1065,7 @@ BuildMainGui() {
     hkMini := CFG["hotkeyMiniOverlay"] = "" ? "Не задано" : FormatHotkey(CFG["hotkeyMiniOverlay"])
     
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToHelp("Overlay", MainGui.AddText("x" x " y" y " w350 c" THEME["accent"], "Управление"))
+    AddToHelp("Overlay", MainGui.AddText("x" x " y" y " w350 c" THEME["accent"] " BackgroundTrans", "Управление"))
     y += 50
     MainGui.SetFont("s9", "Consolas")
     helpText1 := 
@@ -1088,7 +1088,7 @@ BuildMainGui() {
     ; === 2. СИНТАКСИС ===
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 c" THEME["success"], "Переменные"))
+    AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 c" THEME["success"] " BackgroundTrans", "Переменные"))
     y += 50
     MainGui.SetFont("s10 bold", "Consolas")
     tags := [
@@ -1103,22 +1103,22 @@ BuildMainGui() {
     }
     y += 20
     MainGui.SetFont("s9 italic", "Segoe UI")
-    AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"], "Пример: Привет, я {MY}. Что болит, {P}?"))
+    AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Пример: Привет, я {MY}. Что болит, {P}?"))
     
     ; === 3. О ПРОГРАММЕ ===
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["text"], "О программе"))
+    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["text"] " BackgroundTrans", "О программе"))
     y += 50
     MainGui.SetFont("s10", "Segoe UI")
     AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"], "Версия: " VERSION))
     y += 30
     AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"], "Автор: " AUTHOR))
     y += 30
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"], "Год: 2026"))
+    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Год: 2026"))
     y += 50
     MainGui.SetFont("s9 italic", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 h100 c" THEME["textDim"], "Разработано специально для медицинского сообщества SAMP ABS RP"))
+    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 h100 c" THEME["textDim"] " BackgroundTrans", "Разработано специально для медицинского сообщества SAMP ABS RP"))
     
     
     ; --- ПРАВАЯ ОБЛАСТЬ (КОНТАКТЫ - ВСЕГДА ВИДНЫ) ---
@@ -1136,7 +1136,7 @@ BuildMainGui() {
     xIn := xRight + 20
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w200 c" THEME["accent"], "📬 СВЯЗЬ")
+    MainGui.AddText("x" xIn " y" y " w200 c" THEME["accent"] " BackgroundTrans", "📬 СВЯЗЬ")
     y += 40
     
     MainGui.SetFont("s10 norm", "Segoe UI")
@@ -1151,11 +1151,11 @@ BuildMainGui() {
     y += 20
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w200 c" THEME["error"], "💖 ДОНАТ")
+    MainGui.AddText("x" xIn " y" y " w200 c" THEME["error"] " BackgroundTrans", "💖 ДОНАТ")
     y += 40
     
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w200 h40 c" THEME["textDim"], "Поддержите разработку копеечкой:")
+    MainGui.AddText("x" xIn " y" y " w200 h40 c" THEME["textDim"] " BackgroundTrans", "Поддержите разработку копеечкой:")
     y += 50
     
     MainGui.SetFont("s10 bold", "Segoe UI")

@@ -105,7 +105,7 @@ FilterMenuCheckHover(items) {
 
 
 ShowFilterMenu(*) {
-    global FilterMenuGui, CurrentFilter, FILTERS, THEME
+    global FilterMenuGui, CurrentFilter, FILTERS, THEME, MainGui
     
     try {
         if FilterMenuGui {
@@ -114,7 +114,7 @@ ShowFilterMenu(*) {
         }
     }
     
-    FilterMenuGui := Gui("+AlwaysOnTop -Caption +ToolWindow", "Filters")
+    FilterMenuGui := Gui("+AlwaysOnTop -Caption +ToolWindow +Owner" MainGui.Hwnd, "Filters")
     FilterMenuGui.BackColor := THEME["bg"]
     FilterMenuGui.MarginX := 0
     FilterMenuGui.MarginY := 0
@@ -123,7 +123,7 @@ ShowFilterMenu(*) {
     w := 240
     
     FilterMenuGui.SetFont("s10 bold", "Segoe UI")
-    FilterMenuGui.AddText("x16 y" y " w" (w-32) " c" THEME["accent"], "🔍 Фильтры")
+    FilterMenuGui.AddText("x16 y" y " w" (w-32) " c" THEME["accent"] " BackgroundTrans", "🔍 Фильтры")
     y += 32
     
     FilterMenuGui.AddText("x12 y" y " w" (w-24) " h2 Background" THEME["borderGlow"], "")
@@ -190,20 +190,20 @@ ApplyFilterFromMenu(filterName) {
 }
 
 CreateNewFilter() {
-    global FILTERS, THEME
+    global FILTERS, THEME, MainGui
     
-    filterGui := Gui("+AlwaysOnTop", "Создать фильтр")
+    filterGui := Gui("+AlwaysOnTop +Owner" MainGui.Hwnd, "Создать фильтр")
     filterGui.BackColor := THEME["bg"]
     filterGui.SetFont("s10 c" THEME["text"], "Segoe UI")
     
-    filterGui.AddText("x20 y20 w100", "Название:")
+    filterGui.AddText("x20 y20 w100 BackgroundTrans", "Название:")
     filterGui.AddEdit("x120 y17 w220 h28 Background" THEME["bgHighlight"] " c" THEME["text"] " vNewFilterName", "")
     
-    filterGui.AddText("x20 y60 w100", "Условие:")
+    filterGui.AddText("x20 y60 w100 BackgroundTrans", "Условие:")
     filterGui.AddEdit("x120 y57 w220 h28 Background" THEME["bgHighlight"] " c" THEME["text"] " vNewFilterCondition", "category=")
     
     filterGui.SetFont("s8", "Segoe UI")
-    filterGui.AddText("x20 y95 w320 c" THEME["textDim"], "Примеры: category=Лечение, enabled=true")
+    filterGui.AddText("x20 y95 w320 c" THEME["textDim"] " BackgroundTrans", "Примеры: category=Лечение, enabled=true")
     
     filterGui.SetFont("s10", "Segoe UI")
     CreateStyledButton(filterGui, 20, 130, 110, 36, "Создать", (*) => SaveNewFilter(filterGui), "success")
@@ -230,15 +230,15 @@ SaveNewFilter(gui) {
 }
 
 EditFilters() {
-    global FILTERS, THEME, FilterEditorGui
+    global FILTERS, THEME, FilterEditorGui, MainGui
     
     try FilterEditorGui.Destroy()
     
-    FilterEditorGui := Gui("-Resize", "Редактор фильтров")
+    FilterEditorGui := Gui("-Resize +Owner" MainGui.Hwnd, "Редактор фильтров")
     FilterEditorGui.BackColor := THEME["bg"]
     FilterEditorGui.SetFont("s10 c" THEME["text"], "Segoe UI")
     
-    FilterEditorGui.AddText("x20 y15 w300 c" THEME["accent"], "★ — пользовательские фильтры")
+    FilterEditorGui.AddText("x20 y15 w300 c" THEME["accent"] " BackgroundTrans", "★ — пользовательские фильтры")
     
     lv := FilterEditorGui.AddListView("x20 y45 w460 h310 Background" THEME["bgLight"] " c" THEME["text"] " vFilterList Grid", 
         ["Название", "Условие", "Тип"])
@@ -284,7 +284,7 @@ DeleteSelectedFilter() {
 ; ЗАГРУЗКА ПРОФИЛЕЙ
 ; ═══════════════════════════════════════════════════════════════════════════════
 ShowModernFilterMenu(*) {
-    global MainGui, FilterPopupGui, THEME, btnFilterDisplay
+    global MainGui, FilterPopupGui, THEME, btnFilterDisplay, CurrentFilter
     
     if FilterPopupGui {
         CleanupHoverButtons(FilterPopupGui)
@@ -305,35 +305,38 @@ ShowModernFilterMenu(*) {
         ; Но у нас кастомный заголовок, так что просто подбираем:
         
         menuX := winX + btnX + 1  ; Отступ слева (рамка окна)
-        menuY := winY + btnY + 31  ; Отступ сверху (заголовок + рамка)
+        menuY := winY + btnY + btnH + 2  ; Прямо под кнопкой
         
     } catch {
         return
     }
     
     FilterPopupGui := Gui("-Caption +AlwaysOnTop +ToolWindow +Owner" MainGui.Hwnd, "FilterMenu")
-    FilterPopupGui.BackColor := THEME["bg"]
+    FilterPopupGui.BackColor := THEME["bgLight"]
     FilterPopupGui.SetFont("s9", "Segoe UI") ; Шрифт поменьше
     
     filters := ["Все", "Основные", "Лечение", "Медосмотр", "Вакцины", "Операции", "Быстрые", "Утилиты", "Активные"]
+    current := CurrentFilter = "" ? "Все" : CurrentFilter
     
-    w := 160
-    hItem := 28 ; Высота меньше (было 35)
+    w := 170
+    hItem := 30
     y := 0
     
-    ; Рамка (окантовка)
-    FilterPopupGui.AddText("x0 y0 w" w " h" (hItem * filters.Length + 2) " Background" THEME["border"], "")
-    
     for filterName in filters {
-        btn := CreateStyledButton(FilterPopupGui, 1, y+1, w-2, hItem-1, "  " filterName, ((fn) => (*) => ApplyModernFilter(fn))(filterName), "default")
-        
-        btn.colors.bg := THEME["bgLight"] ; Чуть светлее фона
-        btn.ctrl.Opt("Background" THEME["bgLight"])
-        
+        isActive := (filterName = current)
+        btn := CreateStyledButton(FilterPopupGui, 2, y+2, w-4, hItem-4,
+            (isActive ? "✓ " : "  ") filterName,
+            ((fn) => (*) => ApplyModernFilter(fn))(filterName), "default")
+        ; Активный фильтр — подсвеченная строка с акцентным текстом
+        btn.colors := {bg: isActive ? THEME["bgSelected"] : THEME["bgLight"],
+                       hover: isActive ? THEME["bgSelected"] : THEME["bgHover"],
+                       text: isActive ? THEME["accent"] : THEME["text"]}
+        btn.ctrl.Opt("Background" btn.colors.bg " c" btn.colors.text)
+        btn.ctrl.SetFont("s9" (isActive ? " bold" : " norm"), "Segoe UI")
         y += hItem
     }
     
-    FilterPopupGui.Show("x" menuX " y" menuY " w" w " h" (y+2) " NA")
+    FilterPopupGui.Show("x" menuX " y" menuY " w" w " h" (y + 2) " NA")
 }
 
 ApplyModernFilter(name) {
