@@ -45,7 +45,7 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x0 y0 w" totalW " h45 Background" THEME["bgLight"], "")
     EditorGui.SetFont("s12 bold", "Segoe UI")
     bindTitle := slot["name"] != "" ? slot["name"] : "Новый бинд"
-    EditorGui.AddText("x20 y10 w600 h30 c" THEME["accent"] " BackgroundTrans", "✏️ РЕДАКТОР: " bindTitle)
+    EditorGui.AddText("x20 y10 w600 h30 c" THEME["accent"] " BackgroundTrans", "РЕДАКТОР: " bindTitle)
     
     CloseBtn := EditorGui.AddText("x" (totalW - 45) " y0 w45 h45 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
     CloseBtn.OnEvent("Click", (*) => SafeCloseEditor())
@@ -120,11 +120,11 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x" (xCard+leftW-120) " y" (yMain+18) " w100 Right c" THEME["textDim"] " Background" THEME["bgLight"] " vEditorLineCount", slot["lines"].Length " строк")
     
     yTool := yMain + 50
-    CreateStyledButton(EditorGui, xCard+15, yTool, 100, 32, "➕ Добавить", (*) => EditorAddRow(), "success")
-    CreateStyledButton(EditorGui, xCard+125, yTool, 40, 32, "▲", (*) => EditorMoveUp(), "default")
-    CreateStyledButton(EditorGui, xCard+170, yTool, 40, 32, "▼", (*) => EditorMoveDown(), "default")
-    CreateStyledButton(EditorGui, xCard+215, yTool, 40, 32, "📄", (*) => EditorDuplicateRow(), "info")
-    CreateStyledButton(EditorGui, xCard+260, yTool, 40, 32, "🗑️", (*) => EditorDeleteRow(), "danger")
+    CreateOutlineBtn(EditorGui, xCard+15, yTool, 100, 32, "+ Добавить", (*) => EditorAddRow(), "success")
+    CreateOutlineBtn(EditorGui, xCard+125, yTool, 40, 32, "▲", (*) => EditorMoveUp(), "default")
+    CreateOutlineBtn(EditorGui, xCard+170, yTool, 40, 32, "▼", (*) => EditorMoveDown(), "default")
+    CreateOutlineBtn(EditorGui, xCard+215, yTool, 44, 32, "Коп", (*) => EditorDuplicateRow(), "info")
+    CreateOutlineBtn(EditorGui, xCard+264, yTool, 44, 32, "Удал", (*) => EditorDeleteRow(), "danger")
     
     EditorGui.AddText("x" (xCard+10) " y" (yTool+40) " w" (leftW-20) " h2 Background" THEME["border"], "")
     
@@ -153,24 +153,24 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x" xRight " y" yMain " w4 h" mainH " Background" THEME["success"], "")
     
     EditorGui.SetFont("s11 bold", "Segoe UI")
-    EditorGui.AddText("x" (xRight+20) " y" (yMain+15) " w200 c" THEME["success"] " Background" THEME["bgLight"], "✏️ РЕДАКТИРОВАНИЕ")
+    EditorGui.AddText("x" (xRight+20) " y" (yMain+15) " w200 c" THEME["success"] " Background" THEME["bgLight"], "РЕДАКТИРОВАНИЕ")
     EditorGui.SetFont("s9 bold", "Segoe UI")
     EditorGui.AddText("x" (xRight+rightW-150) " y" (yMain+18) " w130 Right c" THEME["textMuted"] " Background" THEME["bgLight"] " vEditorRowLabel", "Строка не выбрана")
     
     yTags := yMain + 50
     EditorGui.SetFont("s8 bold", "Segoe UI")
     EditorGui.AddText("x" (xRight+15) " y" (yTags+6) " w40 c" THEME["textDim"] " Background" THEME["bgLight"], "ТЕГИ:")
-    CreateStyledButton(EditorGui, xRight+55, yTags, 40, 26, "{P}", (*) => EditorInsertTag("{P}"), "info")
-    CreateStyledButton(EditorGui, xRight+100, yTags, 50, 26, "{MY}", (*) => EditorInsertTag("{MY}"), "info")
-    CreateStyledButton(EditorGui, xRight+155, yTags, 60, 26, "{HOSP}", (*) => EditorInsertTag("{HOSPITAL}"), "info")
-    CreateStyledButton(EditorGui, xRight+220, yTags, 60, 26, "{SPEC}", (*) => EditorInsertTag("{SPECIALTY}"), "info")
+    CreateOutlineBtn(EditorGui, xRight+55, yTags, 44, 26, "{P}", (*) => EditorInsertTag("{P}"), "info")
+    CreateOutlineBtn(EditorGui, xRight+104, yTags, 54, 26, "{MY}", (*) => EditorInsertTag("{MY}"), "info")
+    CreateOutlineBtn(EditorGui, xRight+163, yTags, 64, 26, "{HOSP}", (*) => EditorInsertTag("{HOSPITAL}"), "info")
+    CreateOutlineBtn(EditorGui, xRight+232, yTags, 64, 26, "{SPEC}", (*) => EditorInsertTag("{SPECIALTY}"), "info")
 
     yCmds := yTags + 32
     EditorGui.AddText("x" (xRight+15) " y" (yCmds+6) " w110 c" THEME["textDim"] " Background" THEME["bgLight"], "Быстрые команды:")
-    CreateStyledButton(EditorGui, xRight+125, yCmds, 40, 26, "/я", (*) => EditorInsertTag("/я "), "default")
-    CreateStyledButton(EditorGui, xRight+170, yCmds, 40, 26, "/фд", (*) => EditorInsertTag("/фд "), "default")
-    CreateStyledButton(EditorGui, xRight+215, yCmds, 40, 26, "/де", (*) => EditorInsertTag("/де "), "default")
-    CreateStyledButton(EditorGui, xRight+260, yCmds, 50, 26, "/шепот", (*) => EditorInsertTag("/шепот "), "default")
+    CreateOutlineBtn(EditorGui, xRight+125, yCmds, 44, 26, "/я", (*) => EditorInsertTag("/я "), "default")
+    CreateOutlineBtn(EditorGui, xRight+174, yCmds, 44, 26, "/фд", (*) => EditorInsertTag("/фд "), "default")
+    CreateOutlineBtn(EditorGui, xRight+223, yCmds, 44, 26, "/де", (*) => EditorInsertTag("/де "), "default")
+    CreateOutlineBtn(EditorGui, xRight+272, yCmds, 54, 26, "/шепот", (*) => EditorInsertTag("/шепот "), "default")
 
     yEdit := yCmds + 35
     hEdit := 195
@@ -190,12 +190,12 @@ OpenBindEditor(slotNum) {
     EditorDelayBox.OnEvent("Change", EditorHandleDelayInput)
     
     ; ЗЕЛЕНАЯ ГАЛОЧКА (Скрыта по умолчанию)
-    BtnConfirmDelay := CreateStyledButton(EditorGui, xRight+200, yDelay, 40, 30, "✔", (*) => EditorConfirmDelay(), "success")
-    BtnConfirmDelay.ctrl.Visible := false 
+    BtnConfirmDelay := CreateOutlineBtn(EditorGui, xRight+200, yDelay, 40, 30, "✔", (*) => EditorConfirmDelay(), "success")
+    OutlineSetVisible(BtnConfirmDelay, false)
     
-    CreateStyledButton(EditorGui, xRight+250, yDelay, 50, 30, "1200", (*) => EditorSetDelay(1200), "default")
-    CreateStyledButton(EditorGui, xRight+305, yDelay, 50, 30, "2300", (*) => EditorSetDelay(2300), "default")
-    CreateStyledButton(EditorGui, xRight+360, yDelay, 140, 30, "⏬ Ко всем", (*) => EditorApplyDelayToAll(), "warning")
+    CreateOutlineBtn(EditorGui, xRight+250, yDelay, 52, 30, "1200", (*) => EditorSetDelay(1200), "default")
+    CreateOutlineBtn(EditorGui, xRight+306, yDelay, 52, 30, "2300", (*) => EditorSetDelay(2300), "default")
+    CreateOutlineBtn(EditorGui, xRight+360, yDelay, 140, 30, "Ко всем", (*) => EditorApplyDelayToAll(), "warning")
     
     ; --- ПРЕДПРОСМОТР ---
     yPreview := yDelay + 45
@@ -203,23 +203,23 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x" (xRight+15) " y" yPreview " w" (rightW-30) " h" hPreview " Background" THEME["bg"], "")
     EditorGui.AddText("x" (xRight+15) " y" yPreview " w3 h" hPreview " Background" THEME["accentLight"], "")
     EditorGui.SetFont("s8 bold", "Segoe UI")
-    EditorGui.AddText("x" (xRight+25) " y" (yPreview+5) " w200 c" THEME["accentLight"] " BackgroundTrans", "👁️ ПРЕДПРОСМОТР (Как в игре):")
+    EditorGui.AddText("x" (xRight+25) " y" (yPreview+5) " w200 c" THEME["accentLight"] " BackgroundTrans", "ПРЕДПРОСМОТР (как в игре):")
     EditorGui.SetFont("s10", "Segoe UI")
     EditorGui.AddText("x" (xRight+25) " y" (yPreview+25) " w" (rightW-50) " h40 c" THEME["text"] " BackgroundTrans vEditorPreview", "Выберите строку...")
 
     ; --- ПОДВАЛ ---
     yFooter := yMain + mainH + 15
     EditorGui.AddText("x20 y" (yFooter-5) " w" (totalW-40) " h2 Background" THEME["borderGlow"], "")
-    CreateStyledButton(EditorGui, 20, yFooter, 220, 45, "💾 СОХРАНИТЬ", (*) => SaveModernEditor(), "success")
+    CreateOutlineBtn(EditorGui, 20, yFooter, 220, 45, "СОХРАНИТЬ", (*) => SaveModernEditor(), "success")
     EditorGui.SetFont("s9 italic", "Segoe UI")
     EditorGui.AddText("x260 y" (yFooter+15) " w480 Center c" THEME["textMuted"] " BackgroundTrans", "Все изменения применяются только после нажатия кнопки Сохранить")
-    CreateStyledButton(EditorGui, totalW-200, yFooter, 180, 45, "❌ ОТМЕНА", (*) => SafeCloseEditor(), "danger")
+    CreateOutlineBtn(EditorGui, totalW-200, yFooter, 180, 45, "ОТМЕНА", (*) => SafeCloseEditor(), "danger")
     
     if (lv.GetCount() > 0) {
         lv.Modify(1, "Select Focus")
         EditorOnSelect(lv, 1, true)
     } else {
-        EditorEditBox.Value := "👈 Добавьте первую строку кнопкой слева..."
+        EditorEditBox.Value := "Добавьте первую строку кнопкой слева..."
     }
     
     xPos := (A_ScreenWidth - totalW) // 2
@@ -260,7 +260,7 @@ EditorHandleDelayInput(*) {
     } else {
         ; Если авто-сохранение ВЫКЛ -> Показываем галочку
         if BtnConfirmDelay
-            BtnConfirmDelay.ctrl.Visible := true
+            OutlineSetVisible(BtnConfirmDelay, true)
     }
 }
 
@@ -283,7 +283,7 @@ EditorConfirmDelay(silentMode := false) {
         
         ; Скрываем галочку, если это ручной режим
         if (!silentMode && BtnConfirmDelay)
-            BtnConfirmDelay.ctrl.Visible := false
+            OutlineSetVisible(BtnConfirmDelay, false)
     }
 }
 
@@ -323,7 +323,7 @@ EditorOnSelect(lv, row, selected) {
         
         ; СКРЫВАЕМ ГАЛОЧКУ при смене строки
         if BtnConfirmDelay
-            BtnConfirmDelay.ctrl.Visible := false
+            OutlineSetVisible(BtnConfirmDelay, false)
             
         UpdateEditorPreview()
     }

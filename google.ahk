@@ -179,6 +179,9 @@ SetTimer(SendLaunchStats, -500)
 OnExit(ExitHandler)
 
 
+; Закрытие меню фильтра кликом мимо — ТОЛЬКО когда меню открыто,
+; чтобы глобальный ~LButton не перехватывал клики в остальное время
+#HotIf (FilterPopupGui != "")
 ~LButton:: {
     global FilterPopupGui
     try {
@@ -193,6 +196,7 @@ OnExit(ExitHandler)
         }
     }
 }
+#HotIf
 
 
 ; Стильный крестик (Иконка + Неон + Анимация клика)
