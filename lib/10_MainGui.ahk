@@ -39,16 +39,16 @@ BuildMainGui() {
     }
 
     ; === 2. ЗАГОЛОВОК ===
-    TitleBar := MainGui.AddText("x0 y0 w920 h40 Background" THEME["bgLight"], "")
+    TitleBar := PageCtrl(MainGui.AddText("x0 y0 w920 h40 Background" THEME["bgLight"], ""))
     MainGui.SetFont("s11 bold", "Segoe UI")
-    MainGui.AddText("x20 y10 w600 h25 c" THEME["accent"] " BackgroundTrans", "✚ " APP_NAME " v" VERSION)
+    PageCtrl(MainGui.AddText("x20 y10 w600 h25 c" THEME["accent"] " BackgroundTrans", "✚ " APP_NAME " v" VERSION))
     
     ; Статус автосохранения (справа от заголовка, слева от кнопки закрытия)
     MainGui.SetFont("s8 norm", "Segoe UI")
-    MainGui.AddText("x610 y13 w300 Right c" THEME["success"] " BackgroundTrans vAutoSaveStatus",
-        (CFG["autoSave"] ? "Автосохранение: вкл" : "Автосохранение: выкл"))
+    PageCtrl(MainGui.AddText("x610 y13 w300 Right c" THEME["success"] " BackgroundTrans vAutoSaveStatus",
+        (CFG["autoSave"] ? "Автосохранение: вкл" : "Автосохранение: выкл")))
 
-    CloseBtn := MainGui.AddText("x920 y0 w40 h40 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
+    CloseBtn := PageCtrl(MainGui.AddText("x920 y0 w40 h40 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕"))
     CloseBtn.OnEvent("Click", (*) => MainGui.Hide())
     
     HoverButtons.Push({
@@ -63,13 +63,24 @@ BuildMainGui() {
     })
     TitleBar.OnEvent("Click", (*) => PostMessage(0xA1, 2, 0, MainGui.Hwnd))
     
-    ; === 3. ВКЛАДКИ ===
-    ; Используем Tab2 (НЕ Tab3): у Tab2 подконтролы страниц — обычные дети окна
-    ; с абсолютными координатами, которые НЕ перемещаются вместе с контролом
-    ; вкладок (у Tab3 — перемещаются). Поэтому сам Tab2 можно унести за пределы
-    ; экрана: его родные заголовки не видны и никогда не мелькают при
-    ; переключении, а страницы по-прежнему скрываются/показываются через Choose.
-    tabs := MainGui.AddTab2("x-3000 y-3000 w940 h700", ["Главная", "Бинды", "Настройки", "Статистика", "Справка"])
+    ; === 3. СТРАНИЦЫ (собственные UI-контейнеры, без стандартного Tab) ===
+    ; Каждая страница — набор контролов MainGui, сгруппированных в PageGroups.
+    ; Переключение (PageSwitch) скрывает/показывает группы целиком в одном
+    ; обработчике — без промежуточных состояний и мигания, без Tab2.
+    global PageGroups := Map()
+    global PageCur := 0   ; 0 = контролы вне страниц (шапка, навигация)
+
+    ; Атомарное переключение страниц: скрыть старую, показать новую —
+    ; в одном обработчике, без промежуточных состояний и мигания
+    PageSwitch(idx) {
+        global PageGroups
+        for n, ctrls in PageGroups {
+            show := (n = idx)
+            for ctrl in ctrls {
+                try ctrl.Visible := show
+            }
+        }
+    }
 
     ; ==============================================================================
     ; СОВРЕМЕННАЯ ШАПКА ВКЛАДКИ (единый компонент для всех разделов)
@@ -78,25 +89,25 @@ BuildMainGui() {
     ; ==============================================================================
     AddModernHeader(y, icon, iconColor, title, subtitle, chip := "", chipColor := THEME["textDim"]) {
         ; Панель-подложка со скруглёнными углами
-        pnl := MainGui.AddText("x20 y" y " w920 h100 Background" THEME["bgLight"], "")
+        pnl := PageCtrl(MainGui.AddText("x20 y" y " w920 h100 Background" THEME["bgLight"], ""))
         RoundCorners(pnl, 920, 100, 16)
         ; Цветной акцент слева (тонкая скруглённая полоска)
-        bar := MainGui.AddText("x20 y" y " w5 h100 Background" iconColor, "")
+        bar := PageCtrl(MainGui.AddText("x20 y" y " w5 h100 Background" iconColor, ""))
         RoundCorners(bar, 5, 100, 10)
         ; Плитка с иконкой
-        tile := MainGui.AddText("x40 y" (y+16) " w68 h68 Center 0x200 Background" THEME["bgHighlight"] " c" iconColor, icon)
+        tile := PageCtrl(MainGui.AddText("x40 y" (y+16) " w68 h68 Center 0x200 Background" THEME["bgHighlight"] " c" iconColor, icon))
         tile.SetFont("s28", "Segoe UI Symbol")
         RoundCorners(tile, 68, 68, 18)
         ; Заголовок раздела
-        tit := MainGui.AddText("x126 y" (y+18) " w520 h34 c" THEME["text"] " BackgroundTrans", title)
+        tit := PageCtrl(MainGui.AddText("x126 y" (y+18) " w520 h34 c" THEME["text"] " BackgroundTrans", title))
         tit.SetFont("s20 bold", "Segoe UI")
         ; Подзаголовок
-        sub := MainGui.AddText("x128 y" (y+56) " w520 h22 c" THEME["textDim"] " BackgroundTrans", subtitle)
+        sub := PageCtrl(MainGui.AddText("x128 y" (y+56) " w520 h22 c" THEME["textDim"] " BackgroundTrans", subtitle))
         sub.SetFont("s10", "Segoe UI")
         ; Статус-чип справа
         if chip != "" {
             cw := Max(120, 24 + StrLen(chip) * 8)
-            ch := MainGui.AddText("x" (940 - 20 - cw) " y" (y+34) " w" cw " h32 Center 0x200 Background" THEME["bgHighlight"] " c" chipColor, chip)
+            ch := PageCtrl(MainGui.AddText("x" (940 - 20 - cw) " y" (y+34) " w" cw " h32 Center 0x200 Background" THEME["bgHighlight"] " c" chipColor, chip))
             ch.SetFont("s9 bold", "Segoe UI")
             RoundCorners(ch, cw, 32, 16)
         }
@@ -105,7 +116,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 1. ГЛАВНАЯ (компактная сетка: 3 карточки)
     ; ==============================================================================
-    tabs.UseTab(1)
+    PageCur := 1
 
     yHead := 90
 
@@ -123,35 +134,35 @@ BuildMainGui() {
     x3 := x2 + cw + gap
 
     ; ---------- Карточка 1: Личное дело ----------
-    c1 := MainGui.AddText("x" x1 " y" yStart " w" cw " h" cardH " Background" THEME["bgLight"], "")
+    c1 := PageCtrl(MainGui.AddText("x" x1 " y" yStart " w" cw " h" cardH " Background" THEME["bgLight"], ""))
     RoundCorners(c1, cw, cardH, THEME["radiusLg"])
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (x1+THEME["cardPad"]) " y" (yStart+15) " w" (cw-32) " c" THEME["text"] " BackgroundTrans", "Личное дело")
-    MainGui.AddText("x" (x1+THEME["cardPad"]) " y" (yStart+42) " w" (cw-32) " h1 Background" THEME["border"], "")
+    PageCtrl(MainGui.AddText("x" (x1+THEME["cardPad"]) " y" (yStart+15) " w" (cw-32) " c" THEME["text"] " BackgroundTrans", "Личное дело"))
+    PageCtrl(MainGui.AddText("x" (x1+THEME["cardPad"]) " y" (yStart+42) " w" (cw-32) " h1 Background" THEME["border"], ""))
 
     y := yStart + 58
     xIn := x1 + THEME["cardPad"]
     iw := cw - THEME["cardPad"] * 2     ; 266
 
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Имя Фамилия")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Имя Фамилия"))
     MainGui.SetFont("s10", "Segoe UI")
-    MainGui.AddEdit("x" xIn " y" (y+16) " w" (iw-48) " h" THEME["inputH"] " Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileName", STATE["myName"])
+    PageCtrl(MainGui.AddEdit("x" xIn " y" (y+16) " w" (iw-48) " h" THEME["inputH"] " Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileName", STATE["myName"]))
     MainGui["ProfileName"].OnEvent("Change", (*) => CheckProfileDirty())
     CreateStyledButton(MainGui, xIn + iw - 40, y + 16, 40, THEME["inputH"], "Авто", (*) => AutoFillSmart(), "info", "Определить ник из игры")
 
     y += 58
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Больница")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Больница"))
     MainGui.SetFont("s10", "Segoe UI")
-    MainGui.AddEdit("x" xIn " y" (y+16) " w" iw " h" THEME["inputH"] " Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileHospital", STATE["hospital"])
+    PageCtrl(MainGui.AddEdit("x" xIn " y" (y+16) " w" iw " h" THEME["inputH"] " Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileHospital", STATE["hospital"]))
     MainGui["ProfileHospital"].OnEvent("Change", (*) => CheckProfileDirty())
 
     y += 58
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Специальность")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Специальность"))
     MainGui.SetFont("s10", "Segoe UI")
-    MainGui.AddEdit("x" xIn " y" (y+16) " w" iw " h" THEME["inputH"] " Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileSpecialty", STATE["specialty"])
+    PageCtrl(MainGui.AddEdit("x" xIn " y" (y+16) " w" iw " h" THEME["inputH"] " Background" THEME["bgHighlight"] " c" THEME["text"] " vProfileSpecialty", STATE["specialty"]))
     MainGui["ProfileSpecialty"].OnEvent("Change", (*) => CheckProfileDirty())
 
     y += 56
@@ -159,41 +170,41 @@ BuildMainGui() {
     UpdateButtonState(g_BtnSaveProfile, false)
 
     MainGui.SetFont("s8", "Segoe UI")
-    MainGui.AddText("x" xIn " y" (y+52) " w" iw " c" THEME["textMuted"] " BackgroundTrans", "Переменные: {MY} · {HOSPITAL} · {SPECIALTY}")
+    PageCtrl(MainGui.AddText("x" xIn " y" (y+52) " w" iw " c" THEME["textMuted"] " BackgroundTrans", "Переменные: {MY} · {HOSPITAL} · {SPECIALTY}"))
 
     ; ---------- Карточка 2: Текущий пациент ----------
-    c2 := MainGui.AddText("x" x2 " y" yStart " w" cw " h" cardH " Background" THEME["bgLight"], "")
+    c2 := PageCtrl(MainGui.AddText("x" x2 " y" yStart " w" cw " h" cardH " Background" THEME["bgLight"], ""))
     RoundCorners(c2, cw, cardH, THEME["radiusLg"])
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (x2+THEME["cardPad"]) " y" (yStart+15) " w" (cw-32) " c" THEME["text"] " BackgroundTrans", "Текущий пациент")
-    MainGui.AddText("x" (x2+THEME["cardPad"]) " y" (yStart+42) " w" (cw-32) " h1 Background" THEME["border"], "")
+    PageCtrl(MainGui.AddText("x" (x2+THEME["cardPad"]) " y" (yStart+15) " w" (cw-32) " c" THEME["text"] " BackgroundTrans", "Текущий пациент"))
+    PageCtrl(MainGui.AddText("x" (x2+THEME["cardPad"]) " y" (yStart+42) " w" (cw-32) " h1 Background" THEME["border"], ""))
 
     y := yStart + 58
     xIn := x2 + THEME["cardPad"]
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "ID пациента")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "ID пациента"))
     MainGui.SetFont("s12 bold", "Consolas")
-    MainGui.AddEdit("x" xIn " y" (y+16) " w" (iw-172) " h34 Center Background" THEME["bgHighlight"] " c" THEME["accent"] " vMainPatientId", STATE["patientId"])
+    PageCtrl(MainGui.AddEdit("x" xIn " y" (y+16) " w" (iw-172) " h34 Center Background" THEME["bgHighlight"] " c" THEME["accent"] " vMainPatientId", STATE["patientId"]))
     MainGui.SetFont("s10 bold", "Segoe UI")
     CreateStyledButton(MainGui, xIn + iw - 164, y + 16, 78, 34, "Принять", (*) => MainSetPatient(), "success")
     CreateStyledButton(MainGui, xIn + iw - 78, y + 16, 78, 34, "Сброс", (*) => MainClearPatient(), "danger")
 
     y += 70
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Отображение в чате")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textDim"] " BackgroundTrans", "Отображение в чате"))
     MainGui.SetFont("s14 bold", "Consolas")
-    MainGui.AddText("x" xIn " y" (y+16) " w" iw " c" THEME["success"] " BackgroundTrans vMainPatientDisplay", GetPatientDisplay() = "" ? "—" : GetPatientDisplay())
+    PageCtrl(MainGui.AddText("x" xIn " y" (y+16) " w" iw " c" THEME["success"] " BackgroundTrans vMainPatientDisplay", GetPatientDisplay() = "" ? "—" : GetPatientDisplay()))
 
     y += 66
     MainGui.SetFont("s8", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textMuted"] " BackgroundTrans", "ID подставится в сообщения как {P}")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textMuted"] " BackgroundTrans", "ID подставится в сообщения как {P}"))
 
     ; ---------- Карточка 3: Быстрое управление ----------
-    c3 := MainGui.AddText("x" x3 " y" yStart " w" cw " h" cardH " Background" THEME["bgLight"], "")
+    c3 := PageCtrl(MainGui.AddText("x" x3 " y" yStart " w" cw " h" cardH " Background" THEME["bgLight"], ""))
     RoundCorners(c3, cw, cardH, THEME["radiusLg"])
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (x3+THEME["cardPad"]) " y" (yStart+15) " w" (cw-32) " c" THEME["text"] " BackgroundTrans", "Быстрое управление")
-    MainGui.AddText("x" (x3+THEME["cardPad"]) " y" (yStart+42) " w" (cw-32) " h1 Background" THEME["border"], "")
+    PageCtrl(MainGui.AddText("x" (x3+THEME["cardPad"]) " y" (yStart+15) " w" (cw-32) " c" THEME["text"] " BackgroundTrans", "Быстрое управление"))
+    PageCtrl(MainGui.AddText("x" (x3+THEME["cardPad"]) " y" (yStart+42) " w" (cw-32) " h1 Background" THEME["border"], ""))
 
     y := yStart + 58
     xIn := x3 + THEME["cardPad"]
@@ -204,7 +215,7 @@ BuildMainGui() {
 
     y += 52
     MainGui.SetFont("s8 bold", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textMuted"] " BackgroundTrans", "ПРОФИЛИ")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w" iw " c" THEME["textMuted"] " BackgroundTrans", "ПРОФИЛИ"))
     y += 22
     CreateStyledButton(MainGui, xIn, y, btnW, THEME["btnH"], "Загрузить файл", (*) => LoadProfileDialog(), "info", "Импорт профиля из файла .ini или .aci")
     CreateStyledButton(MainGui, xIn + btnW + 8, y, btnW, THEME["btnH"], "Сохранить файл", (*) => SaveProfileDialog(), "info", "Экспорт биндов в отдельный файл .ini")
@@ -227,7 +238,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 2. БИНДЫ (MODERN MANAGER LAYOUT)
     ; ==============================================================================
-    tabs.UseTab(2)
+    PageCur := 2
     
     yHead := 90 
     
@@ -243,43 +254,42 @@ BuildMainGui() {
     wList := 660
     
     ; Карточка списка
-    cardList := MainGui.AddText("x20 y" yStart " w" wList " h500 Background" THEME["bgLight"], "")
+    cardList := PageCtrl(MainGui.AddText("x20 y" yStart " w" wList " h500 Background" THEME["bgLight"], ""))
     RoundCorners(cardList, wList, 500, 14)
-    stripeList := MainGui.AddText("x20 y" yStart " w4 h500 Background" THEME["accent"], "")
-    RoundCorners(stripeList, 4, 500, 14)
+        RoundCorners(stripeList, 4, 500, 14)
     
     ; --- ПАНЕЛЬ ИНСТРУМЕНТОВ (TOOLBAR) ---
     yTool := yStart + 15
     xTool := 40
     
     MainGui.SetFont("s11 bold", "Segoe UI")
-    MainGui.AddText("x" xTool " y" yTool " w150 c" THEME["accentLight"] " BackgroundTrans", "Поиск")
+    PageCtrl(MainGui.AddText("x" xTool " y" yTool " w150 c" THEME["accentLight"] " BackgroundTrans", "Поиск"))
     
     ; Поле поиска
     MainGui.SetFont("s10 norm", "Segoe UI")
-    MainGui.AddEdit("x" (xTool+100) " y" (yTool-3) " w230 h30 vBindSearch Background" THEME["bgHighlight"] " c" THEME["text"], "")
+    PageCtrl(MainGui.AddEdit("x" (xTool+100) " y" (yTool-3) " w230 h30 vBindSearch Background" THEME["bgHighlight"] " c" THEME["text"], ""))
     MainGui["BindSearch"].OnEvent("Change", OnSearchChange)
     
     ; Кнопка очистки (Красный крестик)
     CreateClearBtn(MainGui, xTool+335, yTool-3, 30, (*) => ClearSearch())
     
     ; Фильтр (Справа)
-    MainGui.AddText("x" (xTool+380) " y" yTool " w60 Right c" THEME["textDim"] " BackgroundTrans", "Фильтр:")
+    PageCtrl(MainGui.AddText("x" (xTool+380) " y" yTool " w60 Right c" THEME["textDim"] " BackgroundTrans", "Фильтр:"))
     
   
     global btnFilterDisplay
     btnFilterDisplay := CreateStyledButton(MainGui, xTool+450, yTool-3, 160, 30, "Фильтр: Все ▼", (*) => ShowModernFilterMenu(), "default")
     
     ; Разделитель под тулбаром
-    MainGui.AddText("x20 y" (yTool+40) " w" wList " h2 Background" THEME["border"], "")
+    PageCtrl(MainGui.AddText("x20 y" (yTool+40) " w" wList " h2 Background" THEME["border"], ""))
     
     ; --- ЗАГОЛОВОК ТАБЛИЦЫ (Кастомный) ---
     yList := yTool + 50
     hList := 400
     
     ; Фон заголовка
-    MainGui.AddText("x30 y" yList " w" (wList-20) " h26 Background" THEME["bgLight"], "")
-    MainGui.AddText("x30 y" (yList+26) " w" (wList-20) " h1 Background" THEME["borderGlow"], "")
+    PageCtrl(MainGui.AddText("x30 y" yList " w" (wList-20) " h26 Background" THEME["bgLight"], ""))
+    PageCtrl(MainGui.AddText("x30 y" (yList+26) " w" (wList-20) " h1 Background" THEME["borderGlow"], ""))
     
     ; === ФИКСИРОВАННЫЕ ШИРИНЫ КОЛОНОК (Сумма = 600, чтобы влез скроллбар) ===
     col1 := 35    ; №
@@ -299,22 +309,22 @@ BuildMainGui() {
     
     ; Текст заголовков (Координаты теперь совпадают с колонками)
     MainGui.SetFont("s8 bold", "Segoe UI")
-    MainGui.AddText("x" (x1+4) " y" (yList+5) " w" col1 " c" THEME["textMuted"] " BackgroundTrans", "№")
-    MainGui.AddText("x" (x2+4) " y" (yList+5) " w" col2 " c" THEME["textMuted"] " BackgroundTrans", "НАЗВАНИЕ")
-    MainGui.AddText("x" (x3+4) " y" (yList+5) " w" col3 " c" THEME["textMuted"] " BackgroundTrans", "КАТЕГОРИЯ")
-    MainGui.AddText("x" (x4+4) " y" (yList+5) " w" col4 " c" THEME["textMuted"] " BackgroundTrans", "КЛАВИША")
-    MainGui.AddText("x" (x5+2) " y" (yList+5) " w" col5 " c" THEME["textMuted"] " BackgroundTrans", "СТР")
-    MainGui.AddText("x" (x6+2) " y" (yList+5) " w" col6 " c" THEME["textMuted"] " BackgroundTrans", "СТАТУС")
+    PageCtrl(MainGui.AddText("x" (x1+4) " y" (yList+5) " w" col1 " c" THEME["textMuted"] " BackgroundTrans", "№"))
+    PageCtrl(MainGui.AddText("x" (x2+4) " y" (yList+5) " w" col2 " c" THEME["textMuted"] " BackgroundTrans", "НАЗВАНИЕ"))
+    PageCtrl(MainGui.AddText("x" (x3+4) " y" (yList+5) " w" col3 " c" THEME["textMuted"] " BackgroundTrans", "КАТЕГОРИЯ"))
+    PageCtrl(MainGui.AddText("x" (x4+4) " y" (yList+5) " w" col4 " c" THEME["textMuted"] " BackgroundTrans", "КЛАВИША"))
+    PageCtrl(MainGui.AddText("x" (x5+2) " y" (yList+5) " w" col5 " c" THEME["textMuted"] " BackgroundTrans", "СТР"))
+    PageCtrl(MainGui.AddText("x" (x6+2) " y" (yList+5) " w" col6 " c" THEME["textMuted"] " BackgroundTrans", "СТАТУС"))
     
     ; ListView
     lvTop := yList + 28
     lvH := hList - 28
     
     MainGui.SetFont("s9", "Segoe UI")
-    lv := MainGui.AddListView("x30 y" lvTop " w" (wList-20) " h" lvH 
+    lv := PageCtrl(MainGui.AddListView("x30 y" lvTop " w" (wList-20) " h" lvH 
         " Background" THEME["bgLight"] " c" THEME["text"] 
         " vBindList -Hdr -Grid -Multi -HScroll +LV0x10000", 
-        ["№", "Название", "Категория", "Клавиша", "Стр", "Статус"])
+        ["№", "Название", "Категория", "Клавиша", "Стр", "Статус"]))
     
     SetDarkControl(lv)
     SetListViewRowHeight(lv, 26)
@@ -334,7 +344,7 @@ BuildMainGui() {
 
     ; Подвал списка
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x40 y" (yList+hList+10) " w200 c" THEME["textMuted"] " vListStatusLabel BackgroundTrans", "Загрузка списка...")
+    PageCtrl(MainGui.AddText("x40 y" (yList+hList+10) " w200 c" THEME["textMuted"] " vListStatusLabel BackgroundTrans", "Загрузка списка..."))
 
 
     ; ======================= ПРАВАЯ КОЛОНКА: ДЕЙСТВИЯ =======================
@@ -342,14 +352,13 @@ BuildMainGui() {
     wRight := 240
     
     ; Карточка действий
-    cardActions := MainGui.AddText("x" xRight " y" yStart " w" wRight " h500 Background" THEME["bgLight"], "")
+    cardActions := PageCtrl(MainGui.AddText("x" xRight " y" yStart " w" wRight " h500 Background" THEME["bgLight"], ""))
     RoundCorners(cardActions, wRight, 500, 14)
-    stripeActions := MainGui.AddText("x" xRight " y" yStart " w4 h500 Background" THEME["warning"], "")
-    RoundCorners(stripeActions, 4, 500, 14)
+        RoundCorners(stripeActions, 4, 500, 14)
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"] " BackgroundTrans", "Действия")
-    MainGui.AddText("x" (xRight+20) " y" (yStart+45) " w" (wRight-40) " h2 Background" THEME["border"], "")
+    PageCtrl(MainGui.AddText("x" (xRight+20) " y" (yStart+15) " w" (wRight-40) " c" THEME["warning"] " BackgroundTrans", "Действия"))
+    PageCtrl(MainGui.AddText("x" (xRight+20) " y" (yStart+45) " w" (wRight-40) " h2 Background" THEME["border"], ""))
     
     ySide := yStart + 60
     xSide := xRight + 20
@@ -360,7 +369,7 @@ BuildMainGui() {
     
     ySide += 70
     MainGui.SetFont("s9 bold", "Segoe UI")
-    MainGui.AddText("x" xSide " y" ySide " w" wSide " c" THEME["textDim"] " BackgroundTrans", "Выбранный элемент")
+    PageCtrl(MainGui.AddText("x" xSide " y" ySide " w" wSide " c" THEME["textDim"] " BackgroundTrans", "Выбранный элемент"))
     
     ySide += 25
     gap := 8
@@ -378,13 +387,13 @@ BuildMainGui() {
     CreateStyledButton(MainGui, xSide, ySide, wSide, btnH, "Удалить", (*) => DeleteSelectedBind(), "default")    
     ySide += btnH + 40
     ; Отмена в самом низу
-    MainGui.AddText("x" xSide " y" (ySide-15) " w" wSide " h2 Background" THEME["border"], "")
+    PageCtrl(MainGui.AddText("x" xSide " y" (ySide-15) " w" wSide " h2 Background" THEME["border"], ""))
     CreateStyledButton(MainGui, xSide, ySide, wSide, btnH, "Отменить действие", (*) => Undo(), "warning")
 
     ; ==============================================================================
     ; 3. НАСТРОЙКИ (FINAL POLISHED LAYOUT)
     ; ==============================================================================
-    tabs.UseTab(3)
+    PageCur := 3
     
     yHead := 90
     
@@ -400,7 +409,7 @@ BuildMainGui() {
     hMenu := 440 ; Высота меню и контента
     
     ; Фон под меню (скруглённая панель)
-    menuPanel := MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    menuPanel := PageCtrl(MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(menuPanel, wMenu, hMenu, 14)
     
     SettingGroups := Map()
@@ -414,7 +423,7 @@ BuildMainGui() {
     ; Функция создания кнопки меню (современная пилюля, как в верхней навигации)
     CreateSideBtn(yPos, text, id) {
         w := wMenu - 24
-        btn := MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text)
+        btn := PageCtrl(MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text))
         btn.SetFont("s10 bold", "Segoe UI")
         RoundCorners(btn, w, 42, 21)   ; полностью скруглённая пилюля
         btn.OnEvent("Click", (*) => SwitchSettingTab(id))
@@ -471,8 +480,6 @@ BuildMainGui() {
         for ctrl in SettingGroups[tabName] {
             try ctrl.Visible := true
         }
-        ; Полная перерисовка — убирает артефакты/обводки от скрытых контролов
-        try WinRedraw("ahk_id " MainGui.Hwnd)
     }
     
     
@@ -481,10 +488,9 @@ BuildMainGui() {
     wContent := 640
     
     ; ФОНОВАЯ ПОДЛОЖКА ПОД КОНТЕНТ (ВИЗУАЛЬНЫЙ КОНТЕЙНЕР)
-    contentPanel := MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    contentPanel := PageCtrl(MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(contentPanel, wContent, hMenu, 14)
     ; Декоративная линия слева от контента
-    contentLine := MainGui.AddText("x" xContent " y" yStart " w2 h" hMenu " Background" THEME["border"], "")
     RoundCorners(contentLine, 2, hMenu, 14)
     
     AddToGroup(group, ctrl) {
@@ -498,99 +504,99 @@ BuildMainGui() {
     
     ; ЗАГОЛОВОК И ОПИСАНИЕ
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("General", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Основные параметры"))
+    AddToGroup("General", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Основные параметры")))
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("General", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Настройте базовое поведение биндера, клавишу активации чата и формат отображения ID пациентов."))
+    AddToGroup("General", PageCtrl(MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Настройте базовое поведение биндера, клавишу активации чата и формат отображения ID пациентов.")))
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    AddToGroup("General", MainGui.AddText("x" x " y" (y+3) " w150 c" THEME["textDim"] " BackgroundTrans", "Клавиша чата (F6/T):"))
+    AddToGroup("General", PageCtrl(MainGui.AddText("x" x " y" (y+3) " w150 c" THEME["textDim"] " BackgroundTrans", "Клавиша чата (F6/T):")))
     val := CFG["chatKey"]
     disp := val = "" ? "—" : FormatHotkey(val)
-    hkChat := MainGui.AddText("x" (x+160) " y" y " w120 h26 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_ChatKey", disp)
+    hkChat := PageCtrl(MainGui.AddText("x" (x+160) " y" y " w120 h26 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_ChatKey", disp))
     AddToGroup("General", hkChat)
-    MainGui.AddEdit("x0 y0 w0 h0 Hidden vValue_ChatKey", val) 
+    PageCtrl(MainGui.AddEdit("x0 y0 w0 h0 Hidden vValue_ChatKey", val)) 
     ; Делаем чуть меньше и квадратным (30x30)
     btnCl := CreateClearBtn(MainGui, x+290, y-2, 30, (*) => ClearHotkey("ChatKey"))
     AddToGroup("General", btnCl) 
     hkChat.OnEvent("Click", (*) => StartHotkeyCapture("ChatKey"))
     
     y += 50
-    AddToGroup("General", MainGui.AddText("x" x " y" (y-5) " w400 c" THEME["textDim"] " BackgroundTrans", "Формат ID пациента (как вставлять в чат):"))
+    AddToGroup("General", PageCtrl(MainGui.AddText("x" x " y" (y-5) " w400 c" THEME["textDim"] " BackgroundTrans", "Формат ID пациента (как вставлять в чат):")))
     btnW := 100
     btnH := 35
     MainGui.SetFont("s9 bold", "Segoe UI")
     
-    b1 := MainGui.AddText("x" x " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_At BackgroundTrans", "@ID")
+    b1 := PageCtrl(MainGui.AddText("x" x " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_At BackgroundTrans", "@ID"))
     AddToGroup("General", b1)
     b1.OnEvent("Click", (*) => SetIdFormatGUI("at"))
     
-    b2 := MainGui.AddText("x" (x+btnW+10) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Quote BackgroundTrans", "`"ID`"")
+    b2 := PageCtrl(MainGui.AddText("x" (x+btnW+10) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Quote BackgroundTrans", "`"ID`""))
     AddToGroup("General", b2)
     b2.OnEvent("Click", (*) => SetIdFormatGUI("quote"))
     
-    b3 := MainGui.AddText("x" (x+btnW*2+20) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Plain BackgroundTrans", "ID")
+    b3 := PageCtrl(MainGui.AddText("x" (x+btnW*2+20) " y" (y+20) " w" btnW " h" btnH " Center 0x200 vBtnFmt_Plain BackgroundTrans", "ID"))
     AddToGroup("General", b3)
     b3.OnEvent("Click", (*) => SetIdFormatGUI("plain"))
     
     y += 90
     MainGui.SetFont("s10 norm", "Segoe UI")
-    c1 := MainGui.AddCheckbox("x" x " y" y " vSettingsOnlyGTA c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["onlyGTA"] ? 1 : 0), " Работа только при активном окне GTA")
+    c1 := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsOnlyGTA c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["onlyGTA"] ? 1 : 0), " Работа только при активном окне GTA"))
     AddToGroup("General", c1)
     c1.OnEvent("Click", (*) => CheckSettingsDirty())
     
     ; ======================= 2. УВЕДОМЛЕНИЯ =======================
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("Notify", MainGui.AddText("x" x " y" y " w400 c" THEME["warning"] " BackgroundTrans", "Система уведомлений"))
+    AddToGroup("Notify", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["warning"] " BackgroundTrans", "Система уведомлений")))
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("Notify", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Управляйте звуковыми и визуальными оповещениями. Полезно, если игра свернута."))
+    AddToGroup("Notify", PageCtrl(MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Управляйте звуковыми и визуальными оповещениями. Полезно, если игра свернута.")))
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    c2 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifySms c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifySms"] ? 1 : 0), " Всплывающее SMS (если игра свернута)")
+    c2 := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsNotifySms c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifySms"] ? 1 : 0), " Всплывающее SMS (если игра свернута)"))
     AddToGroup("Notify", c2)
     c2.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c3 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyMention c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifyMention"] ? 1 : 0), " Звук при упоминании вашего ника в чате")
+    c3 := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyMention c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifyMention"] ? 1 : 0), " Звук при упоминании вашего ника в чате"))
     AddToGroup("Notify", c3)
     c3.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c4 := MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyKeywords c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifyKeywords"] ? 1 : 0), " Реагировать на просьбы (врач, лечи, таблетку)")
+    c4 := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsNotifyKeywords c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["notifyKeywords"] ? 1 : 0), " Реагировать на просьбы (врач, лечи, таблетку)"))
     AddToGroup("Notify", c4)
     c4.OnEvent("Click", (*) => CheckSettingsDirty())
     y += 40
-    c5 := MainGui.AddCheckbox("x" x " y" y " vSettingsConfirmDelete c" THEME["text"] " Background" THEME["bgLight"] " Checked" (EditorConfirmDelete ? 1 : 0), " Спрашивать подтверждение при удалении строк")
+    c5 := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsConfirmDelete c" THEME["text"] " Background" THEME["bgLight"] " Checked" (EditorConfirmDelete ? 1 : 0), " Спрашивать подтверждение при удалении строк"))
     AddToGroup("Notify", c5)
     c5.OnEvent("Click", (*) => CheckSettingsDirty())
     
     ; ======================= 3. ТАЙМИНГИ =======================
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w400 c" THEME["success"] " BackgroundTrans", "Тайминги и Интерфейс"))
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["success"] " BackgroundTrans", "Тайминги и Интерфейс")))
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("Timing", MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Настройка задержек между строками для обхода анти-флуда и прозрачность оверлея."))
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" x " y" (y+30) " w580 c" THEME["textDim"] " BackgroundTrans", "Настройка задержек между строками для обхода анти-флуда и прозрачность оверлея.")))
     MainGui.SetFont("s10 norm", "Segoe UI")
     
     y += 70
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "Базовая (мс):"))
-    AddToGroup("Timing", MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "Разброс (Random):"))
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "Базовая (мс):")))
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "Разброс (Random):")))
     y += 25
-    e1 := MainGui.AddEdit("x" x " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsBaseDelay", CFG["baseDelay"])
+    e1 := PageCtrl(MainGui.AddEdit("x" x " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsBaseDelay", CFG["baseDelay"]))
     AddToGroup("Timing", e1)
     e1.OnEvent("Change", (*) => CheckSettingsDirty())
-    e2 := MainGui.AddEdit("x" (x+220) " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsJitter", CFG["jitter"])
+    e2 := PageCtrl(MainGui.AddEdit("x" (x+220) " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsJitter", CFG["jitter"]))
     AddToGroup("Timing", e2)
     e2.OnEvent("Change", (*) => CheckSettingsDirty())
     
     y += 50
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "После чата (t):"))
-    AddToGroup("Timing", MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "После ввода (Enter):"))
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" x " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "После чата (t):")))
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" (x+220) " y" y " w150 c" THEME["textDim"] " BackgroundTrans", "После ввода (Enter):")))
     y += 25
-    e3 := MainGui.AddEdit("x" x " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsAfterChat", CFG["afterChatDelay"])
+    e3 := PageCtrl(MainGui.AddEdit("x" x " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsAfterChat", CFG["afterChatDelay"]))
     AddToGroup("Timing", e3)
     e3.OnEvent("Change", (*) => CheckSettingsDirty())
-    e4 := MainGui.AddEdit("x" (x+220) " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsAfterEnter", CFG["afterEnterDelay"])
+    e4 := PageCtrl(MainGui.AddEdit("x" (x+220) " y" y " w200 h30 Center Number Background" THEME["bgHighlight"] " c" THEME["text"] " vSettingsAfterEnter", CFG["afterEnterDelay"]))
     AddToGroup("Timing", e4)
     e4.OnEvent("Change", (*) => CheckSettingsDirty())
     
@@ -603,16 +609,16 @@ BuildMainGui() {
     AddToGroup("Timing", bSlow.ctrl)
     
     y += 45
-    cAutoSave := MainGui.AddCheckbox("x" x " y" y " vSettingsEditorAutoSave c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["editorAutoSaveDelay"] ? 1 : 0), " Авто-сохранение задержки в редакторе (без галочки)")
+    cAutoSave := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsEditorAutoSave c" THEME["text"] " Background" THEME["bgLight"] " Checked" (CFG["editorAutoSaveDelay"] ? 1 : 0), " Авто-сохранение задержки в редакторе (без галочки)"))
     AddToGroup("Timing", cAutoSave)
     cAutoSave.OnEvent("Click", (*) => CheckSettingsDirty())
     
     y += 40 
-    AddToGroup("Timing", MainGui.AddText("x" x " y" y " w250 c" THEME["textDim"] " BackgroundTrans", "Прозрачность оверлея:"))
-    slVal := MainGui.AddText("x" (x+300) " y" y " w100 Right c" THEME["accent"] " vOpacityDisplay BackgroundTrans", CFG["overlayOpacity"])
+    AddToGroup("Timing", PageCtrl(MainGui.AddText("x" x " y" y " w250 c" THEME["textDim"] " BackgroundTrans", "Прозрачность оверлея:")))
+    slVal := PageCtrl(MainGui.AddText("x" (x+300) " y" y " w100 Right c" THEME["accent"] " vOpacityDisplay BackgroundTrans", CFG["overlayOpacity"]))
     AddToGroup("Timing", slVal)
     y += 25
-    sl := MainGui.AddSlider("x" x " y" y " w420 h30 vSettingsOverlayOpacity Range100-255 AltSubmit" " Background" THEME["bgLight"], CFG["overlayOpacity"])
+    sl := PageCtrl(MainGui.AddSlider("x" x " y" y " w420 h30 vSettingsOverlayOpacity Range100-255 AltSubmit" " Background" THEME["bgLight"], CFG["overlayOpacity"]))
     AddToGroup("Timing", sl)
     sl.OnEvent("Change", (ctrl, *) => (
         MainGui["OpacityDisplay"].Text := ctrl.Value,
@@ -622,31 +628,31 @@ BuildMainGui() {
     ; ======================= 4. КЛАВИШИ =======================
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToGroup("Hotkeys", MainGui.AddText("x" x " y" y " w400 c" THEME["text"] " BackgroundTrans", "Глобальные клавиши"))
+    AddToGroup("Hotkeys", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["text"] " BackgroundTrans", "Глобальные клавиши")))
     
     y += 40 
 
     ; --- ВОТ ЭТОЙ ФУНКЦИИ НЕ ХВАТАЛО ---
     AddGroupHotkey(label, type, yPos) {
         MainGui.SetFont("s10 norm", "Segoe UI")
-        AddToGroup("Hotkeys", MainGui.AddText("x" x " y" (yPos+3) " w120 c" THEME["textDim"], label))
+        AddToGroup("Hotkeys", PageCtrl(MainGui.AddText("x" x " y" (yPos+3) " w120 c" THEME["textDim"], label)))
         
         val := CFG["hotkey" type]
         disp := val = "" ? "—" : FormatHotkey(val)
         
         ; Поле отображения клавиши
-        hk := MainGui.AddText("x" (x+130) " y" yPos " w200 h28 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_" type, disp)
+        hk := PageCtrl(MainGui.AddText("x" (x+130) " y" yPos " w200 h28 Center 0x200 Border Background" THEME["bgHighlight"] " c" (val="" ? THEME["textMuted"] : THEME["accent"]) " vDisplay_" type, disp))
         AddToGroup("Hotkeys", hk)
         
         ; Скрытое поле для хранения значения
-        MainGui.AddEdit("x0 y0 w0 h0 Hidden vValue_" type, val)
+        PageCtrl(MainGui.AddEdit("x0 y0 w0 h0 Hidden vValue_" type, val))
         
         ; Кнопка очистки (Крестик)
         bn := CreateClearBtn(MainGui, x+340, yPos-1, 30, (*) => ClearHotkey(type))
         AddToGroup("Hotkeys", bn)
         
         ; Статус (для конфликтов)
-        st := MainGui.AddText("x" (x+130) " y" (yPos+30) " w200 h15 c" THEME["error"] " vStatus_" type " BackgroundTrans", "")
+        st := PageCtrl(MainGui.AddText("x" (x+130) " y" (yPos+30) " w200 h15 c" THEME["error"] " vStatus_" type " BackgroundTrans", ""))
         AddToGroup("Hotkeys", st)
         
         ; Событие захвата
@@ -669,13 +675,13 @@ BuildMainGui() {
     y += 50 ; Отступ перед секторами
     
     MainGui.SetFont("s10 bold", "Segoe UI")
-    AddToGroup("Hotkeys", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Настройка секторов меню:"))
+    AddToGroup("Hotkeys", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Настройка секторов меню:")))
     y += 30
     
     ; Функция ячейки радиального меню
     AddWheelCell(label, cfgKey, xPos, yPos) {
         MainGui.SetFont("s9", "Segoe UI")
-        AddToGroup("Hotkeys", MainGui.AddText("x" xPos " y" (yPos+4) " w60 c" THEME["textDim"], label))
+        AddToGroup("Hotkeys", PageCtrl(MainGui.AddText("x" xPos " y" (yPos+4) " w60 c" THEME["textDim"], label)))
         
         currentID := CFG[cfgKey]
         currentName := "— Пусто —"
@@ -706,44 +712,44 @@ BuildMainGui() {
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
     ; Заголовок
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Автоматические отчеты"))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Автоматические отчеты")))
     
     y += 30
     MainGui.SetFont("s9", "Segoe UI")
     ; Описание
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"] " BackgroundTrans", "Биндер будет сам делать F8 при лечении и раскладывать скрины по папкам."))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"] " BackgroundTrans", "Биндер будет сам делать F8 при лечении и раскладывать скрины по папкам.")))
     
     y += 40
     MainGui.SetFont("s11 bold", "Segoe UI")
     ; Чекбокс
-    cScr := MainGui.AddCheckbox("x" x " y" y " vSettingsAutoScreen c" THEME["success"] " Background" THEME["bgLight"] " Checked" (CFG["autoScreen"] ? 1 : 0), " Включить авто-сортировку (Smart Sort)")
+    cScr := PageCtrl(MainGui.AddCheckbox("x" x " y" y " vSettingsAutoScreen c" THEME["success"] " Background" THEME["bgLight"] " Checked" (CFG["autoScreen"] ? 1 : 0), " Включить авто-сортировку (Smart Sort)"))
     AddToGroup("Screenshots", cScr)
     cScr.OnEvent("Click", (*) => CheckSettingsDirty())
     
     
     y += 40
     MainGui.SetFont("s9", "Segoe UI")
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"] " BackgroundTrans", "Создайте правила: какую фразу искать в чате и куда сохранять скриншот."))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" x " y" y " w580 c" THEME["textDim"] " BackgroundTrans", "Создайте правила: какую фразу искать в чате и куда сохранять скриншот.")))
     
     y += 25
     
     ; === 1. КРАСИВЫЙ ЗАГОЛОВОК ТАБЛИЦЫ (Как в Бинды) ===
     ; Фон заголовка
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" y " w500 h26 Background" THEME["bgLight"], ""))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" x " y" y " w500 h26 Background" THEME["bgLight"], "")))
     ; Линия подчеркивания
-    AddToGroup("Screenshots", MainGui.AddText("x" x " y" (y+26) " w500 h1 Background" THEME["borderGlow"], ""))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" x " y" (y+26) " w500 h1 Background" THEME["borderGlow"], "")))
     
     ; Текст колонок
     MainGui.SetFont("s8 bold", "Segoe UI")
-    AddToGroup("Screenshots", MainGui.AddText("x" (x+5)   " y" (y+5) " w135 c" THEME["textMuted"] " BackgroundTrans", "НАЗВАНИЕ"))
-    AddToGroup("Screenshots", MainGui.AddText("x" (x+145) " y" (y+5) " w175 c" THEME["textMuted"] " BackgroundTrans", "ФРАЗА (ТРИГГЕР)"))
-    AddToGroup("Screenshots", MainGui.AddText("x" (x+325) " y" (y+5) " w170 c" THEME["textMuted"] " BackgroundTrans", "ПАПКА"))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" (x+5)   " y" (y+5) " w135 c" THEME["textMuted"] " BackgroundTrans", "НАЗВАНИЕ")))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" (x+145) " y" (y+5) " w175 c" THEME["textMuted"] " BackgroundTrans", "ФРАЗА (ТРИГГЕР)")))
+    AddToGroup("Screenshots", PageCtrl(MainGui.AddText("x" (x+325) " y" (y+5) " w170 c" THEME["textMuted"] " BackgroundTrans", "ПАПКА")))
     
     ; === 2. САМА ТАБЛИЦА (Без стандартного заголовка) ===
     y += 28
     MainGui.SetFont("s9", "Segoe UI")
     ; Флаг -Hdr убирает стандартный заголовок, -Multi запрещает выбор нескольких, -Grid убирает сетку (для чистоты)
-    lvRules := MainGui.AddListView("x" x " y" y " w500 h200 Background" THEME["bgLight"] " c" THEME["text"] " vScreenRulesList -Hdr -Multi -Grid", ["Name", "Phrase", "Path"])
+    lvRules := PageCtrl(MainGui.AddListView("x" x " y" y " w500 h200 Background" THEME["bgLight"] " c" THEME["text"] " vScreenRulesList -Hdr -Multi -Grid", ["Name", "Phrase", "Path"]))
     AddToGroup("Screenshots", lvRules)
     
     ; Применяем стили (Темная полоса прокрутки + Высокие строки)
@@ -771,7 +777,7 @@ BuildMainGui() {
     RefreshScreenRulesList()    
     ; --- КНОПКИ ВНИЗУ (ВЫРОВНЕНЫ ПО ВЫСОТЕ) ---
     y := 675 ; <--- Подняли, чтобы точно влезали в h760
-    MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], "")
+    PageCtrl(MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], ""))
     y += 15
     
     CreateStyledButton(MainGui, 30, y, 140, 40, "Сброс КФГ", (*) => ResetSettingsDefault(), "warning")
@@ -787,7 +793,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 4. СТАТИСТИКА (SIDEBAR STYLE)
     ; ==============================================================================
-    tabs.UseTab(4)
+    PageCur := 4
     
     yHead := 90
     
@@ -801,7 +807,7 @@ BuildMainGui() {
     wMenu := 240
     hMenu := 440
     
-    statPanel := MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    statPanel := PageCtrl(MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(statPanel, wMenu, hMenu, 14)
     
     StatGroups := Map()
@@ -811,7 +817,7 @@ BuildMainGui() {
     ; Функция кнопки меню статистики (современная пилюля)
     CreateStatBtn(yPos, text, id) {
         w := wMenu - 24
-        btn := MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text)
+        btn := PageCtrl(MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text))
         btn.SetFont("s10 bold", "Segoe UI")
         RoundCorners(btn, w, 42, 21)
         btn.OnEvent("Click", (*) => SwitchStatTab(id))
@@ -856,15 +862,13 @@ BuildMainGui() {
         for ctrl in StatGroups[tabName] {
             try ctrl.Visible := true
         }
-        ; Полная перерисовка — убирает артефакты/обводки от скрытых контролов
-        try WinRedraw("ahk_id " MainGui.Hwnd)
     }
     
     ; --- ПРАВАЯ ОБЛАСТЬ ---
     xContent := xMenu + wMenu + 20
     wContent := 640
     
-    statContent := MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], "")
+    statContent := PageCtrl(MainGui.AddText("x" xContent " y" yStart " w" wContent " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(statContent, wContent, hMenu, 14)
     
     AddToStatGroup(group, ctrl) {
@@ -877,16 +881,16 @@ BuildMainGui() {
     x := xContent + 20
     
     CreateDashCard(x, y, w, h, title, varName, value, color) {
-        bg := MainGui.AddText("x" x " y" y " w" w " h" h " Background" THEME["bg"], "") ; Фон темнее (bg) на светлом (bgLight)
+        bg := PageCtrl(MainGui.AddText("x" x " y" y " w" w " h" h " Background" THEME["bg"], "")) ; Фон темнее (bg) на светлом (bgLight)
         RoundCorners(bg, w, h, 10)
-        line := MainGui.AddText("x" x " y" y " w4 h" h " Background" color, "")
+        line := PageCtrl(MainGui.AddText("x" x " y" y " w4 h" h " Background" color, ""))
         RoundCorners(line, 4, h, 10)
         
         MainGui.SetFont("s9 bold", "Segoe UI")
-        tit := MainGui.AddText("x" (x+15) " y" (y+10) " w" (w-20) " c" THEME["textDim"] " BackgroundTrans", title)
+        tit := PageCtrl(MainGui.AddText("x" (x+15) " y" (y+10) " w" (w-20) " c" THEME["textDim"] " BackgroundTrans", title))
         
         MainGui.SetFont("s30 bold", "Segoe UI")
-        val := MainGui.AddText("x" (x+12) " y" (y+26) " w" (w-20) " h50 c" THEME["text"] " BackgroundTrans v" varName, value)
+        val := PageCtrl(MainGui.AddText("x" (x+12) " y" (y+26) " w" (w-20) " h50 c" THEME["text"] " BackgroundTrans v" varName, value))
         
         AddToStatGroup("Dashboard", bg)
         AddToStatGroup("Dashboard", line)
@@ -918,20 +922,20 @@ BuildMainGui() {
     y := yStart + 30
     x := xContent + 40
     MainGui.SetFont("s16 bold", "Segoe UI")
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Информация о сессии"))
+    AddToStatGroup("Info", PageCtrl(MainGui.AddText("x" x " y" y " w400 c" THEME["accent"] " BackgroundTrans", "Информация о сессии")))
     
     y += 60
     MainGui.SetFont("s11 norm", "Segoe UI")
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"] " BackgroundTrans", "Время запуска:"))
+    AddToStatGroup("Info", PageCtrl(MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"] " BackgroundTrans", "Время запуска:")))
     MainGui.SetFont("s16 bold", "Consolas")
-    AddToStatGroup("Info", MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["text"] " BackgroundTrans", FormatTime(STATS["sessionStart"], "HH:mm:ss")))
+    AddToStatGroup("Info", PageCtrl(MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["text"] " BackgroundTrans", FormatTime(STATS["sessionStart"], "HH:mm:ss"))))
     
     y += 50
     MainGui.SetFont("s11 norm", "Segoe UI")
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"] " BackgroundTrans", "Текущее время:"))
+    AddToStatGroup("Info", PageCtrl(MainGui.AddText("x" x " y" y " w200 c" THEME["textDim"] " BackgroundTrans", "Текущее время:")))
     MainGui.SetFont("s16 bold", "Consolas")
     ; Часы
-    clk := MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["success"] " vRealTimeClock BackgroundTrans", FormatTime(A_Now, "HH:mm:ss"))
+    clk := PageCtrl(MainGui.AddText("x" (x+200) " y" (y-5) " w300 c" THEME["success"] " vRealTimeClock BackgroundTrans", FormatTime(A_Now, "HH:mm:ss")))
     AddToStatGroup("Info", clk)
     
     y += 100
@@ -939,12 +943,12 @@ BuildMainGui() {
     infoTxt := "Статистика автоматически сохраняется в файл конфигурации при каждом действии.`n`n" 
              . "При перезапуске скрипта, если не было сброса, статистика продолжается.`n`n"
              . "Используйте кнопку 'Сбросить всё' внизу для начала новой смены."
-    AddToStatGroup("Info", MainGui.AddText("x" x " y" y " w560 h100 c" THEME["textDim"], infoTxt))
+    AddToStatGroup("Info", PageCtrl(MainGui.AddText("x" x " y" y " w560 h100 c" THEME["textDim"], infoTxt)))
     
     
     ; --- КНОПКИ ВНИЗУ ---
     y := 675
-    MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], "")
+    PageCtrl(MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], ""))
     y += 15
     CreateStyledButton(MainGui, 740, y, 180, 40, "Сбросить всё", (*) => ResetStats(), "danger")
     CreateStyledButton(MainGui, 540, y, 180, 40, "Обновить", (*) => UpdateStatsDisplay(), "default")
@@ -954,7 +958,7 @@ BuildMainGui() {
     ; ==============================================================================
     ; 5. СПРАВКА (FINAL LAYOUT WITH STATIC SIDEBAR)
     ; ==============================================================================
-    tabs.UseTab(5)
+    PageCur := 5
     
     yHead := 90
     
@@ -969,7 +973,7 @@ BuildMainGui() {
     wMenu := 200 ; Чуть уже
     hMenu := 460
     
-    helpPanel := MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], "")
+    helpPanel := PageCtrl(MainGui.AddText("x" xMenu " y" yStart " w" wMenu " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(helpPanel, wMenu, hMenu, 14)
     
     HelpGroups := Map()
@@ -979,7 +983,7 @@ BuildMainGui() {
     
     CreateHelpBtn(yPos, text, id) {
         w := wMenu - 24
-        btn := MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text)
+        btn := PageCtrl(MainGui.AddText("x" (xMenu+12) " y" (yPos+4) " w" w " h42 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["textDim"], text))
         btn.SetFont("s10 bold", "Segoe UI")
         RoundCorners(btn, w, 42, 21)
         btn.OnEvent("Click", (*) => SwitchHelpTab(id))
@@ -1025,15 +1029,13 @@ BuildMainGui() {
         for ctrl in HelpGroups[tabName] {
             try ctrl.Visible := true
         }
-        ; Полная перерисовка — убирает артефакты/обводки от скрытых контролов
-        try WinRedraw("ahk_id " MainGui.Hwnd)
     }
     
     ; --- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ (МЕНЯЮЩИЙСЯ КОНТЕНТ) ---
     xCenter := xMenu + wMenu + 20
     wCenter := 440 ; Место под контент
     
-    centerPanel := MainGui.AddText("x" xCenter " y" yStart " w" wCenter " h" hMenu " Background" THEME["bgLight"], "")
+    centerPanel := PageCtrl(MainGui.AddText("x" xCenter " y" yStart " w" wCenter " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(centerPanel, wCenter, hMenu, 14)
     
     AddToHelp(group, ctrl) {
@@ -1049,7 +1051,7 @@ BuildMainGui() {
     hkMini := CFG["hotkeyMiniOverlay"] = "" ? "Не задано" : FormatHotkey(CFG["hotkeyMiniOverlay"])
     
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToHelp("Overlay", MainGui.AddText("x" x " y" y " w350 c" THEME["accent"] " BackgroundTrans", "Управление"))
+    AddToHelp("Overlay", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["accent"] " BackgroundTrans", "Управление")))
     y += 50
     MainGui.SetFont("s9", "Consolas")
     helpText1 := 
@@ -1067,12 +1069,12 @@ BuildMainGui() {
     C ............ Очистить ID
     Escape ....... Закрыть"
     )
-    AddToHelp("Overlay", MainGui.AddText("x" x " y" y " w350 h350 c" THEME["textDim"], helpText1))
+    AddToHelp("Overlay", PageCtrl(MainGui.AddText("x" x " y" y " w350 h350 c" THEME["textDim"], helpText1)))
     
     ; === 2. СИНТАКСИС ===
     y := yStart + 20
     MainGui.SetFont("s14 bold", "Segoe UI")
-    AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 c" THEME["success"] " BackgroundTrans", "Переменные"))
+    AddToHelp("Syntax", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["success"] " BackgroundTrans", "Переменные")))
     y += 50
     MainGui.SetFont("s10 bold", "Consolas")
     tags := [
@@ -1082,43 +1084,43 @@ BuildMainGui() {
         "{SPECIALTY}  Должность"
     ]
     for tag in tags {
-        t := AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 h20 c" THEME["accentLight"], tag))
+        t := AddToHelp("Syntax", PageCtrl(MainGui.AddText("x" x " y" y " w350 h20 c" THEME["accentLight"], tag)))
         y += 30
     }
     y += 20
     MainGui.SetFont("s9 italic", "Segoe UI")
-    AddToHelp("Syntax", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Пример: Привет, я {MY}. Что болит, {P}?"))
+    AddToHelp("Syntax", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Пример: Привет, я {MY}. Что болит, {P}?")))
     
     ; === 3. О ПРОГРАММЕ ===
     y := yStart + 20
     MainGui.SetFont("s16 bold", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["accent"] " BackgroundTrans", "О программе"))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["accent"] " BackgroundTrans", "О программе")))
     y += 40
     
     ; Лого-блок: плитка с крестом + крупное название биндера
-    logo := MainGui.AddText("x" x " y" y " w56 h56 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["error"], "✚")
+    logo := PageCtrl(MainGui.AddText("x" x " y" y " w56 h56 Center 0x200 Background" THEME["bgHighlight"] " c" THEME["error"], "✚"))
     logo.SetFont("s26", "Segoe UI Symbol")
     RoundCorners(logo, 56, 56, 14)
     AddToHelp("About", logo)
     
     MainGui.SetFont("s26 bold", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" (x+70) " y" (y+4) " w280 c" THEME["text"] " BackgroundTrans", "Doctor Binder"))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" (x+70) " y" (y+4) " w280 c" THEME["text"] " BackgroundTrans", "Doctor Binder")))
     MainGui.SetFont("s11", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" (x+72) " y" (y+38) " w280 c" THEME["textDim"] " BackgroundTrans", "v" VERSION "  •  " AUTHOR))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" (x+72) " y" (y+38) " w280 c" THEME["textDim"] " BackgroundTrans", "v" VERSION "  •  " AUTHOR)))
     
     y += 78
-    sepAbout := MainGui.AddText("x" x " y" y " w350 h2 Background" THEME["border"], "")
+    sepAbout := PageCtrl(MainGui.AddText("x" x " y" y " w350 h2 Background" THEME["border"], ""))
     AddToHelp("About", sepAbout)
     y += 20
     MainGui.SetFont("s10", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Версия: " VERSION))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Версия: " VERSION)))
     y += 28
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Автор: " AUTHOR))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Автор: " AUTHOR)))
     y += 28
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Год: 2026"))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" x " y" y " w350 c" THEME["textDim"] " BackgroundTrans", "Год: 2026")))
     y += 40
     MainGui.SetFont("s9 italic", "Segoe UI")
-    AddToHelp("About", MainGui.AddText("x" x " y" y " w350 h100 c" THEME["textDim"] " BackgroundTrans", "Разработано специально для медицинского сообщества SAMP ABS RP"))
+    AddToHelp("About", PageCtrl(MainGui.AddText("x" x " y" y " w350 h100 c" THEME["textDim"] " BackgroundTrans", "Разработано специально для медицинского сообщества SAMP ABS RP")))
     
     
     ; --- ПРАВАЯ ОБЛАСТЬ (КОНТАКТЫ - ВСЕГДА ВИДНЫ) ---
@@ -1127,42 +1129,41 @@ BuildMainGui() {
     y := yStart
     
     ; Фон правой панели
-    rightPanel := MainGui.AddText("x" xRight " y" y " w" wRight " h" hMenu " Background" THEME["bgLight"], "")
+    rightPanel := PageCtrl(MainGui.AddText("x" xRight " y" y " w" wRight " h" hMenu " Background" THEME["bgLight"], ""))
     RoundCorners(rightPanel, wRight, hMenu, 14)
-    rightStripe := MainGui.AddText("x" xRight " y" y " w4 h" hMenu " Background" THEME["accent"], "")
-    RoundCorners(rightStripe, 4, hMenu, 14)
+        RoundCorners(rightStripe, 4, hMenu, 14)
     
     y += 20
     xIn := xRight + 20
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w200 c" THEME["accent"] " BackgroundTrans", "Связь")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w200 c" THEME["accent"] " BackgroundTrans", "Связь"))
     y += 40
     
     MainGui.SetFont("s10 norm", "Segoe UI")
-    MainGui.AddLink("x" xIn " y" (y+5) " w180 c" THEME["text"], '<a href="https://t.me/maxon3r">Telegram</a>')
+    PageCtrl(MainGui.AddLink("x" xIn " y" (y+5) " w180 c" THEME["text"], '<a href="https://t.me/maxon3r">Telegram</a>'))
     y += 50
-    MainGui.AddLink("x" xIn " y" (y+5) " w180 c" THEME["text"], '<a href="https://vk.com/20max19">ВКонтакте</a>')
+    PageCtrl(MainGui.AddLink("x" xIn " y" (y+5) " w180 c" THEME["text"], '<a href="https://vk.com/20max19">ВКонтакте</a>'))
     
     y += 70
-    MainGui.AddText("x" xIn " y" y " w200 h2 Background" THEME["borderGlow"], "")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w200 h2 Background" THEME["borderGlow"], ""))
     y += 20
     
     MainGui.SetFont("s12 bold", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w200 c" THEME["error"] " BackgroundTrans", "Донат")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w200 c" THEME["error"] " BackgroundTrans", "Донат"))
     y += 40
     
     MainGui.SetFont("s9", "Segoe UI")
-    MainGui.AddText("x" xIn " y" y " w200 h40 c" THEME["textDim"] " BackgroundTrans", "Поддержите разработку копеечкой:")
+    PageCtrl(MainGui.AddText("x" xIn " y" y " w200 h40 c" THEME["textDim"] " BackgroundTrans", "Поддержите разработку копеечкой:"))
     y += 50
     
     MainGui.SetFont("s10 bold", "Segoe UI")
-    MainGui.AddLink("x" xIn " y" (y+5) " w180 c" THEME["text"], '<a href="https://www.donationalerts.com/r/maxon3r">DonationAlerts</a>')
+    PageCtrl(MainGui.AddLink("x" xIn " y" (y+5) " w180 c" THEME["text"], '<a href="https://www.donationalerts.com/r/maxon3r">DonationAlerts</a>'))
     
     
     ; --- ПОДВАЛ ---
     y := 675
-    MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], "")
+    PageCtrl(MainGui.AddText("x20 y" y " w920 h2 Background" THEME["borderGlow"], ""))
     
     SwitchHelpTab("Overlay")
 
@@ -1174,11 +1175,11 @@ BuildMainGui() {
     ;   активная вкладка — акцентный текст + жирный, под ней полоска
     ;   индикатора, которая ПЛАВНО скользит к новой вкладке (ease-out)
     ;   неактивная — приглушённый текст, при наведении светлеет
-    ; Панель — ребёнок окна (создаётся после tabs.UseTab()), поверх всего.
+    ; Панель — ребёнок окна (создаётся после PageCur := 0), поверх всего.
     ; ==============================================================================
-    tabs.UseTab()   ; сброс: следующие контролы добавляются в окно, а не во вкладку
-    MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], "")
-    MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], "")
+    PageCur := 0   ; сброс: следующие контролы добавляются в окно, а не во вкладку
+    PageCtrl(MainGui.AddText("x0 y50 w960 h40 Background" THEME["bgLight"], ""))
+    PageCtrl(MainGui.AddText("x0 y89 w960 h1 Background" THEME["border"], ""))
 
     global NavItems := []
     global NavActive := 1
@@ -1191,20 +1192,18 @@ BuildMainGui() {
     indY := 81             ; y индикатора
     indH := 4
 
-    ; Тонкая направляющая-рельса под вкладками
-    MainGui.AddText("x20 y84 w920 h1 Background" THEME["border"], "")
 
     ; Индикатор активной вкладки (создаём раньше текста — он под ним)
     global NavInd := Map("x", navCellX0 + navPadX, "w", navCellW - 2 * navPadX)
-    global NavIndicator := MainGui.AddText("x" NavInd["x"] " y" indY " w" NavInd["w"] " h" indH " Background" THEME["accent"], "")
+    global NavIndicator := PageCtrl(MainGui.AddText("x" NavInd["x"] " y" indY " w" NavInd["w"] " h" indH " Background" THEME["accent"], ""))
     global NavAnimTimer := ""
     global NavAnimData := ""
 
     for i, label in navLabels {
         act := (i = NavActive)
         cx := navCellX0 + (i - 1) * navCellW
-        btn := MainGui.AddText("x" cx " y" navY " w" navCellW " h" navH " Center 0x200 BackgroundTrans c"
-            (act ? THEME["accent"] : THEME["textDim"]), label)
+        btn := PageCtrl(MainGui.AddText("x" cx " y" navY " w" navCellW " h" navH " Center 0x200 BackgroundTrans c"
+            (act ? THEME["accent"] : THEME["textDim"]), label))
         btn.SetFont("s10" (act ? " bold" : " norm"), "Segoe UI")
         btn.OnEvent("Click", ((idx) => (*) => NavSelect(idx))(i))
         HoverButtons.Push({
@@ -1253,14 +1252,22 @@ BuildMainGui() {
     }
 
     NavSelect(idx) {
-        global NavItems, NavActive, HoverButtons, MainGui, THEME, NavInd
+        global NavItems, NavActive, HoverButtons, THEME, NavInd
         if idx = NavActive
             return
-        ; заморозить перерисовку окна на время переключения страниц —
-        ; убирает мигание контента при смене вкладки
-        SendMessage(0x000B, 0, 0, MainGui.Hwnd)
-        tabs.Choose(idx)
+        ; Атомарное переключение страниц (скрыть старую / показать новую
+        ; в одном обработчике) — без WM_SETREDRAW и WinRedraw, которые
+        ; вызывали мигание
+        PageSwitch(idx)
         NavActive := idx
+        ; Восстановить активную подвкладку (внутренние группы страниц
+        ; скрыты/показаны PageSwitch целиком — возвращаем выбранную)
+        if idx = 3
+            SwitchSettingTab(CurrentSettingTab)
+        else if idx = 4
+            SwitchStatTab(CurrentStatTab)
+        else if idx = 5
+            SwitchHelpTab(CurrentHelpTab)
         for item in NavItems {
             act := (item["id"] = idx)
             item["ctrl"].Opt("c" (act ? THEME["accent"] : THEME["textDim"]))
@@ -1276,9 +1283,28 @@ BuildMainGui() {
         AnimateNavIndicator(NavInd,
             navCellX0 + (idx - 1) * navCellW + navPadX,
             navCellW - 2 * navPadX, indY, indH)
-        SendMessage(0x000B, 1, 0, MainGui.Hwnd)
-        WinRedraw("ahk_id " MainGui.Hwnd)   ; у Gui нет метода Redraw — перерисовываем окно через WinRedraw
+        ; Синхронизация hover-состояний навигации: при следующем движении
+        ; мыши подсветка вернётся корректно, «залипаний» не будет
+        for hb in HoverButtons {
+            if IsObject(hb) && hb.HasOwnProp("isNav") && hb.isNav
+                hb.active := (hb.id = idx)
+        }
     }
+
+    ; Показать первую страницу при старте (остальные скрыты сразу)
+    PageSwitch(1)
+}
+
+
+; Регистрирует контрол в текущей странице (PageCur).
+; Вызывается из BuildMainGui (PageCtrl(MainGui.Add...)) и из компонентов
+; кнопок (StyledBtn/CreateClearBtn), чтобы кнопки переключались со страницей.
+; PageCur = 0 — контролы вне страниц (шапка, навигация, отдельные окна).
+PageCtrl(ctrl) {
+    global PageCur, PageGroups
+    if PageCur > 0 && PageGroups.Has(PageCur)
+        PageGroups[PageCur].Push(ctrl)
+    return ctrl
 }
 
 ClearSearch(*) {
@@ -1546,12 +1572,6 @@ MainClearPatient(*) {
     MainGui["MainPatientDisplay"].Text := "—"
     UpdateOverlayData()
     ShowNotify("ID очищен", "success")
-}
-
-MainApplyDoctor(*) {
-    global MainGui, STATE
-    STATE["myName"] := Trim(MainGui["MainDoctorName"].Value)
-    ShowNotify("Имя: " STATE["myName"], "success")
 }
 
 ApplyProfile(*) {

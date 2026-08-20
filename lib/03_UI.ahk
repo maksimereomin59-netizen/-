@@ -24,17 +24,20 @@ class StyledBtn {
         this._animTimer := this.AnimTick
         this.ctrl := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 Background" this.colors.bg " c" this.colors.text, text)
         this.ctrl.SetFont("s9 bold", "Segoe UI")
+        ; Регистрируем кнопку в текущей странице (если создаётся в главном окне),
+        ; чтобы она скрывалась/показывалась вместе со своей страницей
+        try PageCtrl(this.ctrl)
         this.ctrl.OnEvent("Click", (*) => this.OnClick())
-        RoundCorners(this.ctrl, w, h, 10)   ; современный скруглённый вид
+        RoundCorners(this.ctrl, w, h, 6)    ; единый умеренный радиус (дизайн-система)
         HoverButtons.Push(this)
     }
     OnClick() {
         if !this.isClickable
             return
-        ; Эффект нажатия: вдавливаем кнопку (от текущей hover-позиции)
+        ; Эффект нажатия: лёгкое вдавливание
         this.ctrl.Move(this.x + 1, this.y + 1)
-        Sleep(70)
-        this.ctrl.Move(this.x, this.y - (this.isHovered ? 1 : 0))
+        Sleep(60)
+        this.ctrl.Move(this.x, this.y)
         Sleep(20)
         this.callback.Call()
     }
@@ -63,11 +66,8 @@ class StyledBtn {
         if state {
             if this.tip != ""
                 ToolTip(this.tip, , , 1000)
-            ; Лёгкий «подъём» кнопки при наведении
-            try this.ctrl.Move(this.x, this.y - 1)
         } else {
             ToolTip(, , , 1000)
-            try this.ctrl.Move(this.x, this.y)
         }
 
         ; Плавный переход цвета фона
@@ -136,91 +136,19 @@ CreateStyledButton(parent, x, y, w, h, text, callback, style := "default", tip :
 }
 
 ; ───────────────────────────────────────────────────────────────────────────────
-; СОВРЕМЕННЫЕ СКРУГЛЁННЫЕ КНОПКИ (rounded + заливка)
-; Залитая цветная подложка со скруглёнными углами (RoundCorners) + текст на
-; прозрачном фоне. При наведении кнопка подсвечивается более ярким цветом и
-; курсор становится «пальцем» (IDC_HAND), при нажатии — вдавливается.
+; СКРУГЛЁННЫЕ КНОПКИ — единый компонент (StyledBtn / CreateStyledButton)
+; Используется во всём приложении: главное окно, редактор, фильтры, меню.
+; Радиус, цвета hover/pressed, курсор-палец — единые для всех кнопок.
+; CreateOutlineBtn сохранён как совместимая обёртка (старое имя из редактора).
 ; ───────────────────────────────────────────────────────────────────────────────
 CreateOutlineBtn(parent, x, y, w, h, text, callback, style := "default", tip := "") {
-    global THEME, HoverButtons
-    c := OutlineColors(style)
-    radius := Min(12, (h + 2) // 2)   ; скругление: до полной «пилюли» на малых кнопках
-
-    ; Слой 1 — скруглённая подложка с заливкой
-    frame := parent.AddText("x" x " y" y " w" w " h" h " Background" c.bg, "")
-    RoundCorners(frame, w, h, radius)
-
-    ; Слой 2 — текст на прозрачном фоне (поверх заливки)
-    btn := parent.AddText("x" x " y" y " w" w " h" h " Center 0x200 BackgroundTrans c" c.text, text)
-    btn.SetFont("s9 bold", "Segoe UI")
-
-    state := Map("hovered", false)
-    obj := Map(
-        "frame", frame, "ctrl", btn, "colors", c, "state", state,
-        "x", x, "y", y, "w", w, "h", h, "callback", callback,
-        "tip", tip, "parent", parent, "isClickable", true
-    )
-
-    btn.OnEvent("Click", (*) => OutlinePress(obj))
-    frame.OnEvent("Click", (*) => OutlinePress(obj))
-
-    ; Оба слоя отслеживаются ховером (текст и подложка — один объект состояния)
-    HoverButtons.Push({ctrl: btn, parent: parent, isClickable: true, SetHover: (o, s) => OutlineSetHover(obj, s)})
-    HoverButtons.Push({ctrl: frame, parent: parent, isClickable: true, SetHover: (o, s) => OutlineSetHover(obj, s)})
-    return obj
-}
-
-OutlineColors(style) {
-    style := StrLower(style)
-    switch style {
-        case "success": return {bg: "365e3d", hover: "4d8a58", text: "ffffff"}
-        case "danger":  return {bg: "6e2e36", hover: "933c47", text: "ffffff"}
-        case "info":    return {bg: "2e3b6e", hover: "42539c", text: "ffffff"}
-        case "warning": return {bg: "6e5b2e", hover: "8f7636", text: "ffffff"}
-        default:        return {bg: "2b2b3b", hover: "45475a", text: "cdd6f4"}
-    }
-}
-
-OutlineSetHover(obj, state) {
-    if !obj["isClickable"]
-        return
-    if obj["state"]["hovered"] = state
-        return
-    obj["state"]["hovered"] := state
-    c := obj["colors"]
-    if state {
-        ; Подсветка: подложка становится ярче
-        obj["frame"].Opt("Background" c.hover)
-        if obj["tip"] != ""
-            ToolTip(obj["tip"], , , 1000)
-    } else {
-        obj["frame"].Opt("Background" c.bg)
-        ToolTip(, , , 1000)
-    }
-    obj["frame"].Redraw()
-    obj["ctrl"].Redraw()
-    ; Курсор-«палец» при наведении, стрелка при уходе
-    DllCall("user32\SetCursor", "Ptr", DllCall("LoadCursor", "Ptr", 0, "Ptr", state ? 32649 : 32512, "Ptr"))
-}
-
-OutlinePress(obj) {
-    if !obj["isClickable"]
-        return
-    ; Вдавливание: оба слоя смещаются на +1,+1
-    obj["frame"].Move(obj["x"] + 1, obj["y"] + 1)
-    obj["ctrl"].Move(obj["x"] + 1, obj["y"] + 1)
-    Sleep(70)
-    obj["frame"].Move(obj["x"], obj["y"])
-    obj["ctrl"].Move(obj["x"], obj["y"])
-    Sleep(20)
-    obj["callback"].Call()
+    return CreateStyledButton(parent, x, y, w, h, text, callback, style, tip)
 }
 
 OutlineSetVisible(obj, visible) {
     if !IsObject(obj)
         return
-    try obj["frame"].Visible := visible
-    try obj["ctrl"].Visible := visible
+    try obj.ctrl.Visible := visible
 }
 
 ; ───────────────────────────────────────────────────────────────────
@@ -334,6 +262,7 @@ CreateClearBtn(parent, x, y, size, callback) {
     
     ; Создаем кнопку
     btn := parent.AddText("x" x " y" y " w" size " h" size " Center 0x200 BackgroundTrans c" THEME["textMuted"], iconSymbol)
+    try PageCtrl(btn)
     
     try {
         btn.SetFont("s10", "Segoe MDL2 Assets")

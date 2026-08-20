@@ -45,7 +45,10 @@ OpenBindEditor(slotNum) {
     EditorGui.AddText("x0 y0 w" totalW " h45 Background" THEME["bgLight"], "")
     EditorGui.SetFont("s12 bold", "Segoe UI")
     bindTitle := slot["name"] != "" ? slot["name"] : "Новый бинд"
-    EditorGui.AddText("x20 y10 w600 h30 c" THEME["accent"] " BackgroundTrans", "РЕДАКТОР: " bindTitle)
+    EditorGui.AddText("x20 y10 w600 h30 c" THEME["accent"] " BackgroundTrans", "Редактор бинда — " bindTitle)
+    ; Индикатор несохранённых изменений (виден только при наличии правок)
+    EditorGui.AddText("x" (totalW - 240) " y14 w190 Right c" THEME["warning"] " BackgroundTrans vEditorDirty", "● Изменения не сохранены")
+    try EditorGui["EditorDirty"].Visible := false
     
     CloseBtn := EditorGui.AddText("x" (totalW - 45) " y0 w45 h45 Center 0x200 c" THEME["textDim"] " Background" THEME["bgLight"], "✕")
     CloseBtn.OnEvent("Click", (*) => SafeCloseEditor())
@@ -67,19 +70,18 @@ OpenBindEditor(slotNum) {
     xCard := 20
     
     EditorGui.AddText("x" xCard " y" yInfo " w" cardW " h" cardH " Background" THEME["bgLight"], "")
-    EditorGui.AddText("x" xCard " y" yInfo " w4 h" cardH " Background" THEME["warning"], "")
     
     yRow := yInfo + 18
     xIn := xCard + 20
     
     EditorGui.SetFont("s9", "Segoe UI")
-    EditorGui.AddText("x" xIn " y" (yRow-12) " w200 c" THEME["textDim"] " Background" THEME["bgLight"], "Название бинда")
+    EditorGui.AddText("x" xIn " y" (yRow-12) " w200 c" THEME["textDim"] " BackgroundTrans", "Название бинда")
     EditorGui.SetFont("s10 bold", "Segoe UI")
     EditorGui.AddEdit("x" xIn " y" (yRow+8) " w260 h30 Background" THEME["bgHighlight"] " c" THEME["text"] " vEditorName", slot["name"])
     xIn += 290
     
     EditorGui.SetFont("s9", "Segoe UI")
-    EditorGui.AddText("x" xIn " y" (yRow-12) " w140 c" THEME["textDim"] " Background" THEME["bgLight"], "Горячая клавиша")
+    EditorGui.AddText("x" xIn " y" (yRow-12) " w140 c" THEME["textDim"] " BackgroundTrans", "Горячая клавиша")
     hkDisplay := slot["hotkey"] = "" ? "Нажмите..." : FormatHotkey(slot["hotkey"])
     hkColor := slot["hotkey"] = "" ? THEME["textMuted"] : THEME["accent"]
     EditorGui.SetFont("s10 bold", "Segoe UI")
@@ -89,13 +91,13 @@ OpenBindEditor(slotNum) {
     xIn += 170
     
     EditorGui.SetFont("s9", "Segoe UI")
-    EditorGui.AddText("x" xIn " y" (yRow-12) " w140 c" THEME["textDim"] " Background" THEME["bgLight"], "Категория")
+    EditorGui.AddText("x" xIn " y" (yRow-12) " w140 c" THEME["textDim"] " BackgroundTrans", "Категория")
     EditorGui.SetFont("s10", "Segoe UI")
     EditorGui.AddDropDownList("x" xIn " y" (yRow+8) " w140 vEditorCategory Choose1 Background" THEME["bgHighlight"] " c" THEME["text"], ["Основные", "Лечение", "Медосмотр", "Вакцины", "Операции", "Быстрые", "Утилиты"])
     xIn += 170
     
     EditorGui.SetFont("s9", "Segoe UI")
-    EditorGui.AddText("x" xIn " y" (yRow-12) " w120 c" THEME["textDim"] " Background" THEME["bgLight"], "В статистику")
+    EditorGui.AddText("x" xIn " y" (yRow-12) " w120 c" THEME["textDim"] " BackgroundTrans", "В статистику")
     EditorGui.AddDropDownList("x" xIn " y" (yRow+8) " w120 vEditorStatTypeVisible Choose1 Background" THEME["bgHighlight"] " c" THEME["text"], ["—", "Таблетки", "Уколы", "Операции", "Медкарты", "Вакцины"])
     EditorGui.AddDropDownList("x0 y0 w0 Hidden vEditorStatType Choose1", ["", "pills", "inject", "operation", "medcheck", "vaccine"])
     SetEditorDropdowns(slot)
@@ -112,10 +114,9 @@ OpenBindEditor(slotNum) {
     mainH := 460
     
     EditorGui.AddText("x" xCard " y" yMain " w" leftW " h" mainH " Background" THEME["bgLight"], "")
-    EditorGui.AddText("x" xCard " y" yMain " w4 h" mainH " Background" THEME["accent"], "")
     
     EditorGui.SetFont("s11 bold", "Segoe UI")
-    EditorGui.AddText("x" (xCard+20) " y" (yMain+15) " w200 c" THEME["accent"] " Background" THEME["bgLight"], "Список строк")
+    EditorGui.AddText("x" (xCard+20) " y" (yMain+15) " w200 c" THEME["accent"] " BackgroundTrans", "Список строк")
     EditorGui.SetFont("s9", "Segoe UI")
     EditorGui.AddText("x" (xCard+leftW-120) " y" (yMain+18) " w100 Right c" THEME["textDim"] " Background" THEME["bgLight"] " vEditorLineCount", slot["lines"].Length " строк")
     
@@ -150,23 +151,22 @@ OpenBindEditor(slotNum) {
     rightW := totalW - 40 - leftW - 20
     
     EditorGui.AddText("x" xRight " y" yMain " w" rightW " h" mainH " Background" THEME["bgLight"], "")
-    EditorGui.AddText("x" xRight " y" yMain " w4 h" mainH " Background" THEME["success"], "")
     
     EditorGui.SetFont("s11 bold", "Segoe UI")
-    EditorGui.AddText("x" (xRight+20) " y" (yMain+15) " w200 c" THEME["success"] " Background" THEME["bgLight"], "РЕДАКТИРОВАНИЕ")
+    EditorGui.AddText("x" (xRight+20) " y" (yMain+15) " w200 c" THEME["success"] " BackgroundTrans", "Редактирование")
     EditorGui.SetFont("s9 bold", "Segoe UI")
-    EditorGui.AddText("x" (xRight+rightW-150) " y" (yMain+18) " w130 Right c" THEME["textMuted"] " Background" THEME["bgLight"] " vEditorRowLabel", "Строка не выбрана")
+    EditorGui.AddText("x" (xRight+rightW-150) " y" (yMain+18) " w130 Right c" THEME["textMuted"] " BackgroundTrans" " vEditorRowLabel", "Строка не выбрана")
     
     yTags := yMain + 50
     EditorGui.SetFont("s8 bold", "Segoe UI")
-    EditorGui.AddText("x" (xRight+15) " y" (yTags+6) " w40 c" THEME["textDim"] " Background" THEME["bgLight"], "ТЕГИ:")
+    EditorGui.AddText("x" (xRight+15) " y" (yTags+6) " w40 c" THEME["textDim"] " BackgroundTrans", "Теги:")
     CreateOutlineBtn(EditorGui, xRight+55, yTags, 44, 26, "{P}", (*) => EditorInsertTag("{P}"), "info")
     CreateOutlineBtn(EditorGui, xRight+104, yTags, 54, 26, "{MY}", (*) => EditorInsertTag("{MY}"), "info")
     CreateOutlineBtn(EditorGui, xRight+163, yTags, 64, 26, "{HOSP}", (*) => EditorInsertTag("{HOSPITAL}"), "info")
     CreateOutlineBtn(EditorGui, xRight+232, yTags, 64, 26, "{SPEC}", (*) => EditorInsertTag("{SPECIALTY}"), "info")
 
     yCmds := yTags + 32
-    EditorGui.AddText("x" (xRight+15) " y" (yCmds+6) " w110 c" THEME["textDim"] " Background" THEME["bgLight"], "Быстрые команды:")
+    EditorGui.AddText("x" (xRight+15) " y" (yCmds+6) " w110 c" THEME["textDim"] " BackgroundTrans", "Быстрые команды:")
     CreateOutlineBtn(EditorGui, xRight+125, yCmds, 44, 26, "/я", (*) => EditorInsertTag("/я "), "default")
     CreateOutlineBtn(EditorGui, xRight+174, yCmds, 44, 26, "/фд", (*) => EditorInsertTag("/фд "), "default")
     CreateOutlineBtn(EditorGui, xRight+223, yCmds, 44, 26, "/де", (*) => EditorInsertTag("/де "), "default")
@@ -182,7 +182,7 @@ OpenBindEditor(slotNum) {
     ; --- НАСТРОЙКА ЗАДЕРЖКИ ---
     yDelay := yEdit + hEdit + 15
     EditorGui.SetFont("s9", "Segoe UI")
-    EditorGui.AddText("x" (xRight+15) " y" (yDelay+5) " w100 c" THEME["textDim"] " Background" THEME["bgLight"], "Задержка (мс):")
+    EditorGui.AddText("x" (xRight+15) " y" (yDelay+5) " w100 c" THEME["textDim"] " BackgroundTrans", "Задержка (мс):")
     EditorGui.SetFont("s10", "Segoe UI")
     EditorDelayBox := EditorGui.AddEdit("x" (xRight+115) " y" yDelay " w80 h30 Number Center vCurrentLineDelay Background" THEME["bgHighlight"] " c" THEME["text"] " Disabled", "")
     
@@ -200,8 +200,6 @@ OpenBindEditor(slotNum) {
     ; --- ПРЕДПРОСМОТР ---
     yPreview := yDelay + 45
     hPreview := mainH - (yPreview - yMain) - 10
-    EditorGui.AddText("x" (xRight+15) " y" yPreview " w" (rightW-30) " h" hPreview " Background" THEME["bg"], "")
-    EditorGui.AddText("x" (xRight+15) " y" yPreview " w3 h" hPreview " Background" THEME["accentLight"], "")
     EditorGui.SetFont("s8 bold", "Segoe UI")
     EditorGui.AddText("x" (xRight+25) " y" (yPreview+5) " w200 c" THEME["accentLight"] " BackgroundTrans", "ПРЕДПРОСМОТР (как в игре):")
     EditorGui.SetFont("s10", "Segoe UI")
@@ -243,6 +241,7 @@ EditorSyncText(*) {
         EditorGui["EditorLV"].Modify(CurrentSelectedRow, "Col2", text)
         EditorHasChanges := true
         UpdateEditorPreview()
+        UpdateEditorDirtyFlag()
     }
 }
 
@@ -280,6 +279,7 @@ EditorConfirmDelay(silentMode := false) {
         EditorGui["EditorLV"].Modify(CurrentSelectedRow, "Col3", delayText)
         
         EditorHasChanges := true
+        UpdateEditorDirtyFlag()
         
         ; Скрываем галочку, если это ручной режим
         if (!silentMode && BtnConfirmDelay)
@@ -374,6 +374,7 @@ EditorAddRow(*) {
     
     lv.Modify(newRow, "Select Focus")
     EditorHasChanges := true
+    UpdateEditorDirtyFlag()
 }
 
 EditorDeleteRow(*) {
@@ -398,6 +399,7 @@ EditorDeleteRow(*) {
     }
     
     EditorHasChanges := true
+    UpdateEditorDirtyFlag()
     CurrentSelectedRow := 0
     EditorEditBox.Value := ""
     EditorDelayBox.Value := ""
@@ -421,6 +423,7 @@ EditorMoveUp(*) {
     
     EditorGui["EditorLV"].Modify(CurrentSelectedRow - 1, "Select Focus")
     EditorHasChanges := true
+    UpdateEditorDirtyFlag()
 }
 
 EditorMoveDown(*) {
@@ -438,6 +441,7 @@ EditorMoveDown(*) {
     
     EditorGui["EditorLV"].Modify(CurrentSelectedRow + 1, "Select Focus")
     EditorHasChanges := true
+    UpdateEditorDirtyFlag()
 }
 
 RefreshEditorList() {
@@ -763,6 +767,14 @@ SyncStatTypeFromVisible(*) {
     idx := EditorGui["EditorStatTypeVisible"].Value
     try EditorGui["EditorStatType"].Value := idx
     EditorHasChanges := true
+    UpdateEditorDirtyFlag()
+}
+
+UpdateEditorDirtyFlag() {
+    global EditorGui, EditorHasChanges
+    if !EditorGui
+        return
+    try EditorGui["EditorDirty"].Visible := EditorHasChanges
 }
 
 UpdateEditorLineCount() {
@@ -827,6 +839,7 @@ EditorDuplicateRow(*) {
     EditorGui["EditorLV"].Modify(CurrentSelectedRow + 1, "Select Focus")
     
     EditorHasChanges := true
+    UpdateEditorDirtyFlag()
     UpdateEditorLineCount()
     ShowNotify("Строка скопирована", "success")
 }
